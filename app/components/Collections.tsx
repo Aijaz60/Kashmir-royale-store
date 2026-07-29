@@ -1,11 +1,29 @@
 "use client";
 
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import { CartContext } from "../context/CartContext";
 import ProductCard from "./ProductCard";
-import { products } from "../../data/products";
-
 export default function Collections() {
+
+type Product = {
+  _id: string;
+  title: string;
+  description: string;
+  price: number;
+  oldPrice: number;
+  discount: string;
+  rating: string;
+  image: string;
+};
+
+const [products, setProducts] = useState<Product[]>([]);
+
+useEffect(() => {
+  fetch("/api/products")
+    .then((res) => res.json())
+    .then((data) => setProducts(data))
+    .catch((err) => console.error(err));
+}, []);
   const { addToCart } = useContext(CartContext);
 
   return (
@@ -17,7 +35,8 @@ export default function Collections() {
       <div className="grid md:grid-cols-3 gap-8">
         {products.map((product) => (
           <ProductCard
-            key={product.id}
+            key={product._id}
+             id={product._id}
             image={product.image}
             title={product.title}
             description={product.description}
@@ -27,7 +46,7 @@ export default function Collections() {
             rating={product.rating}
             onAddToCart={() =>
               addToCart({
-                id: product.id,
+                id: product._id,
                 title: product.title,
                 price: product.price,
                 image: product.image,

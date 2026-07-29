@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 type ProductCardProps = {
+  id: string | number;
   image: string;
   title: string;
   description: string;
@@ -15,6 +16,7 @@ type ProductCardProps = {
 };
 
 export default function ProductCard({
+  id,
   image,
   title,
   description,
@@ -25,25 +27,21 @@ export default function ProductCard({
   onAddToCart,
 }: ProductCardProps) {
   return (
-    <div className="group border rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition duration-500">
-
+    <div className="group overflow-hidden rounded-2xl border bg-white shadow-lg transition duration-500 hover:shadow-2xl">
       <Image
-        src={image}
+        src={image || "/images/no-image.png"}
         alt={title}
         width={500}
         height={500}
-        className="w-full h-80 object-cover group-hover:scale-105 transition duration-500"
+        className="h-80 w-full object-cover transition duration-500 group-hover:scale-105"
       />
 
-      <div className="p-6 flex flex-col">
+      <div className="p-6">
+        <h3 className="text-2xl font-bold">{title}</h3>
 
-        <h3 className="text-2xl font-bold">
-          {title}
-        </h3>
-
-        <div className="flex items-center mt-3 text-yellow-500">
+        <div className="mt-3 flex items-center text-yellow-500">
           ★★★★★
-          <span className="ml-2 text-gray-600 text-sm">
+          <span className="ml-2 text-sm text-gray-600">
             ({rating})
           </span>
         </div>
@@ -57,34 +55,30 @@ export default function ProductCard({
             {price}
           </span>
 
-          <span className="line-through text-gray-500">
+          <span className="text-gray-500 line-through">
             {oldPrice}
           </span>
 
-          <span className="bg-red-600 text-white text-xs px-2 py-1 rounded">
+          <span className="rounded bg-red-600 px-2 py-1 text-xs text-white">
             {discount}
           </span>
         </div>
 
         <div className="mt-6 space-y-3">
-
           <button
             onClick={onAddToCart}
-            className="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-3 rounded-lg transition"
+            className="w-full rounded-lg bg-yellow-500 py-3 font-bold text-black transition hover:bg-yellow-400"
           >
             🛒 Add to Cart
           </button>
 
-          <Link href="/product/1">
-            <button className="w-full border border-black hover:bg-black hover:text-white font-bold py-3 rounded-lg transition">
+          <Link href={`/product/${id}`}>
+            <button className="w-full rounded-lg border border-black py-3 font-bold transition hover:bg-black hover:text-white">
               View Details
             </button>
           </Link>
-
         </div>
-
       </div>
-
     </div>
   );
 }

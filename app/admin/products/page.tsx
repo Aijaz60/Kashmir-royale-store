@@ -2,6 +2,7 @@
 
 import { products } from "../../../data/products";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function AdminProductsPage() {
   return (
@@ -13,9 +14,12 @@ export default function AdminProductsPage() {
             Manage Products
           </h1>
 
-          <button className="bg-yellow-500 hover:bg-yellow-400 px-6 py-3 rounded-xl font-bold">
+          <Link
+            href="/admin/products/add"
+            className="bg-yellow-500 hover:bg-yellow-400 px-6 py-3 rounded-xl font-bold"
+          >
             + Add Product
-          </button>
+          </Link>
         </div>
 
         <div className="overflow-x-auto bg-white rounded-xl shadow">

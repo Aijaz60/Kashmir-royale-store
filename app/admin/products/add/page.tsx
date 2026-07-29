@@ -11,29 +11,46 @@ export default function AddProductPage() {
   const [description, setDescription] = useState("");
   const [image, setImage] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    alert("Product Added Successfully!");
-
-    console.log({
-      title,
-      price,
-      oldPrice,
-      discount,
-      rating,
-      description,
-      image,
+  try {
+    const response = await fetch("/api/add-product", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title,
+        price: Number(price),
+        oldPrice: Number(oldPrice),
+        discount,
+        rating,
+        description,
+        image,
+      }),
     });
 
-    setTitle("");
-    setPrice("");
-    setOldPrice("");
-    setDiscount("");
-    setRating("");
-    setDescription("");
-    setImage("");
-  };
+    const data = await response.json();
+
+    if (data.success) {
+      alert("✅ Product Added Successfully!");
+
+      setTitle("");
+      setPrice("");
+      setOldPrice("");
+      setDiscount("");
+      setRating("");
+      setDescription("");
+      setImage("");
+    } else {
+      alert("❌ " + data.error);
+    }
+  } catch (error) {
+    console.error(error);
+    alert("Something went wrong!");
+  }
+};
 
   return (
     <main className="min-h-screen bg-gray-100 pt-32 px-8">

@@ -185,6 +185,7 @@ export default function ProductDetailsPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
 
           <ProductCard
+          id={1}
   image="/images/shawl1.jpg"
   title="Premium Kashmiri Shawl"
   description="Soft handcrafted premium shawl."
@@ -203,6 +204,7 @@ export default function ProductDetailsPage() {
 />
 
           <ProductCard
+          id={2}
   image="/images/shawl2.jpg"
   title="Luxury Pashmina"
   description="Authentic handmade Pashmina."
@@ -221,6 +223,7 @@ export default function ProductDetailsPage() {
 />
 
           <ProductCard
+          id={3}
   image="/images/suit1.jpg"
   title="Designer Suit"
   description="Elegant designer suit collection."
