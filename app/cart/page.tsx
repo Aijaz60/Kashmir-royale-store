@@ -6,7 +6,12 @@ import { useContext } from "react";
 import { CartContext } from "../context/CartContext";
 
 export default function CartPage() {
-  const { cart, setCart } = useContext(CartContext);
+  const {
+  cart,
+  removeFromCart,
+ increaseQuantity,
+  decreaseQuantity,
+} = useContext(CartContext);
 
   return (
     <main className="min-h-screen pt-32 px-8">
@@ -61,32 +66,14 @@ export default function CartPage() {
                 <div className="flex items-center gap-3">
 
                   <button
-                    onClick={() => {
-                      const updatedCart = cart.filter(
-                        (_: any, i: number) => i !== index
-                      );
-                      setCart(updatedCart);
-                    }}
+                    onClick={() => removeFromCart(item.id)}
                     className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
                   >
                     Remove
                   </button>
 
                   <button
-                    onClick={() => {
-                      if (item.quantity > 1) {
-                        const updatedCart = cart.map((product: any) =>
-                          product.id === item.id
-                            ? {
-                                ...product,
-                                quantity: product.quantity - 1,
-                              }
-                            : product
-                        );
-
-                        setCart(updatedCart);
-                      }
-                    }}
+                    onClick={() => decreaseQuantity(item.id)}
                     className="w-10 h-10 bg-gray-200 rounded-lg font-bold hover:bg-gray-300"
                   >
                     -
@@ -97,18 +84,7 @@ export default function CartPage() {
                   </span>
 
                   <button
-                    onClick={() => {
-                      const updatedCart = cart.map((product: any) =>
-                        product.id === item.id
-                          ? {
-                              ...product,
-                              quantity: product.quantity + 1,
-                            }
-                          : product
-                      );
-
-                      setCart(updatedCart);
-                    }}
+                    onClick={() => increaseQuantity(item.id)}
                     className="w-10 h-10 bg-yellow-500 text-black rounded-lg font-bold hover:bg-yellow-400"
                   >
                     +

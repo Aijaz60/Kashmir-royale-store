@@ -1,17 +1,13 @@
 "use client";
-import { useContext } from "react";
-import { CartContext } from "./context/CartContext";
+
 import Collections from "./components/Collections";
 import Hero from "./components/Hero";
-
 import Navbar from "./components/Navbar";
+
 export default function Home() {
-  const { cart } = useContext(CartContext);
-
-  return (
+   return (
   <main className="min-h-screen bg-white">
-
-    <Navbar cartCount={cart.length} />
+<Navbar />
 <Hero />
 <Collections />
             {/* Why Choose Us */}

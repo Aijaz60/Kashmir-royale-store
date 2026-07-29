@@ -1,5 +1,8 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+
 type ProductCardProps = {
   image: string;
   title: string;
@@ -29,7 +32,7 @@ export default function ProductCard({
         alt={title}
         width={500}
         height={500}
-        className="w-full h-80 object-cover"
+        className="w-full h-80 object-cover group-hover:scale-105 transition duration-500"
       />
 
       <div className="p-6 flex flex-col">
@@ -45,7 +48,7 @@ export default function ProductCard({
           </span>
         </div>
 
-        <p className="mt-3">
+        <p className="mt-3 text-gray-600">
           {description}
         </p>
 
@@ -71,12 +74,12 @@ export default function ProductCard({
           >
             🛒 Add to Cart
           </button>
-          
+
           <Link href="/product/1">
-  <button className="w-full border border-black hover:bg-black hover:text-white font-bold py-3 rounded-lg transition">
-    View Details
-  </button>
-</Link>
+            <button className="w-full border border-black hover:bg-black hover:text-white font-bold py-3 rounded-lg transition">
+              View Details
+            </button>
+          </Link>
 
         </div>
 

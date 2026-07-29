@@ -1,91 +1,231 @@
 "use client";
 
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { CartContext } from "../context/CartContext";
+
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
 export default function CheckoutPage() {
   const { cart } = useContext(CartContext);
+
+  const [loading, setLoading] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
 
   const total = cart.reduce(
     (sum: number, item: any) => sum + item.price * item.quantity,
     0
   );
 
-  return (
+  const handlePayment = async () => {
+    if (!name || !email || !phone || !address) {
+      alert("Please fill in all customer details.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/create-order", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          amount: total,
+        }),
+      });
+
+      const order = await response.json();
+
+      if (order.error) {
+        alert(order.error);
+        setLoading(false);
+        return;
+      }
+
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: order.amount,
+        currency: order.currency,
+        name: "Kashmir Royale",
+        description: "Order Payment",
+        order_id: order.id,
+
+        handler: async function (response: any) {
+          try {
+            const verifyResponse = await fetch("/api/verify-payment", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+
+            const verifyResult = await verifyResponse.json();
+
+            if (!verifyResult.success) {
+              alert("❌ Payment Verification Failed");
+              return;
+            }
+
+            const saveResponse = await fetch("/api/save-order", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                customer: {
+                  name,
+                  email,
+                  phone,
+                  address,
+                },
+                cart,
+                total,
+                paymentId: response.razorpay_payment_id,
+                orderId: response.razorpay_order_id,
+              }),
+            });
+
+            const saveResult = await saveResponse.json();
+
+            if (saveResponse.ok && saveResult.success) {
+              alert("✅ Payment Successful & Order Saved");
+            } else {
+              alert("❌ Save Order Failed");
+              alert(JSON.stringify(saveResult));
+            }
+          } catch (error) {
+            console.error(error);
+            alert("Something went wrong while saving the order.");
+          }
+        },
+
+        prefill: {
+          name,
+          email,
+          contact: phone,
+        },
+
+        theme: {
+          color: "#D4AF37",
+        },
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+    } catch (error) {
+      console.error(error);
+      alert("Something went wrong.");
+    }
+
+    setLoading(false);
+  };
+    return (
     <main className="min-h-screen pt-32 px-8 bg-gray-50">
-      <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-10">
-
-        {/* Shipping Form */}
-        <div className="bg-white p-8 rounded-2xl shadow-lg">
-
-          <h1 className="text-3xl font-bold mb-6">
+      <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-8">
+        {/* Checkout Form */}
+        <div className="bg-white rounded-2xl shadow-md p-8">
+          <h1 className="text-4xl font-bold mb-8">
             Checkout
           </h1>
 
-          <input
-            type="text"
-            placeholder="Full Name"
-            className="w-full border p-3 rounded-lg mb-4"
-          />
+          <div className="space-y-5">
+            <input
+              type="text"
+              placeholder="Full Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full border rounded-lg px-4 py-3"
+            />
 
-          <input
-            type="email"
-            placeholder="Email"
-            className="w-full border p-3 rounded-lg mb-4"
-          />
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full border rounded-lg px-4 py-3"
+            />
 
-          <input
-            type="tel"
-            placeholder="Phone Number"
-            className="w-full border p-3 rounded-lg mb-4"
-          />
+            <input
+              type="text"
+              placeholder="Phone Number"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full border rounded-lg px-4 py-3"
+            />
 
-          <textarea
-            placeholder="Shipping Address"
-            className="w-full border p-3 rounded-lg mb-4 h-32"
-          />
-
+            <textarea
+              placeholder="Shipping Address"
+              rows={4}
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              className="w-full border rounded-lg px-4 py-3"
+            />
+          </div>
         </div>
 
         {/* Order Summary */}
-        <div className="bg-white p-8 rounded-2xl shadow-lg">
-
-          <h2 className="text-3xl font-bold mb-6">
+        <div className="bg-white rounded-2xl shadow-md p-8 h-fit">
+          <h2 className="text-3xl font-bold mb-8">
             Order Summary
           </h2>
 
-          {cart.map((item: any) => (
-            <div
-              key={item.id}
-              className="flex justify-between border-b py-4"
-            >
-              <div>
-                <h3 className="font-bold">
-                  {item.title}
-                </h3>
+          {cart.length === 0 ? (
+            <p className="text-gray-500">
+              Your cart is empty.
+            </p>
+          ) : (
+            <>
+              <div className="space-y-5">
+                {cart.map((item: any) => (
+                  <div
+                    key={item.id}
+                    className="flex justify-between border-b pb-4"
+                  >
+                    <div>
+                      <h3 className="font-semibold">
+                        {item.title}
+                      </h3>
 
-                <p className="text-gray-500">
-                  Qty: {item.quantity}
-                </p>
+                      <p className="text-gray-500 text-sm">
+                        Qty: {item.quantity}
+                      </p>
+                    </div>
+
+                    <p className="font-bold">
+                      ₹{item.price * item.quantity}
+                    </p>
+                  </div>
+                ))}
               </div>
 
-              <p className="font-bold">
-                ₹{item.price * item.quantity}
-              </p>
-            </div>
-          ))}
+              <div className="flex justify-between text-2xl font-bold mt-8">
+                <span>Total</span>
+                <span>₹{total}</span>
+              </div>
 
-          <div className="flex justify-between mt-8 text-2xl font-bold">
-            <span>Total</span>
-            <span>₹{total}</span>
-          </div>
-
-          <button className="w-full mt-8 bg-yellow-500 hover:bg-yellow-400 py-4 rounded-xl font-bold text-black">
-            Proceed to Payment
-          </button>
-
+              <button
+                onClick={handlePayment}
+                disabled={loading}
+                className="w-full mt-8 bg-yellow-500 hover:bg-yellow-400 py-4 rounded-xl font-bold transition disabled:opacity-50"
+              >
+                {loading ? "Please Wait..." : "Proceed to Payment"}
+              </button>
+            </>
+          )}
         </div>
-
       </div>
     </main>
   );
