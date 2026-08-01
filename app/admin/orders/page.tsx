@@ -1,16 +1,67 @@
-async function getOrders() {
-  const res = await fetch("http://localhost:3000/api/orders", {
-    cache: "no-store",
-  });
+"use client";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
-  return res.json();
-}
+export default function AdminOrdersPage() {
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-export default async function AdminOrdersPage() {
-  const orders = await getOrders();
+  async function loadOrders() {
+    try {
+      const res = await fetch("/api/orders", {
+        cache: "no-store",
+      });
 
-  return (
-    <main className="min-h-screen bg-gray-100 p-8">
+      const data = await res.json();
+
+      if (data.success) {
+        setOrders(data.orders || []);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadOrders();
+  }, []);
+
+  async function updateStatus(id: string, status: string) {
+    try {
+      const res = await fetch(`/api/update-order-status/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        loadOrders();
+      } else {
+        alert("Failed to update status");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Something went wrong");
+    }
+  }
+
+  if (loading) {
+    return (
+      <main className="min-h-screen flex items-center justify-center">
+        <h2 className="text-2xl font-semibold">
+          Loading Orders...
+        </h2>
+      </main>
+    );
+  }
+    return (
+    <main className="min-h-screen bg-gray-100 pt-32 px-8">
       <div className="max-w-7xl mx-auto">
         <h1 className="text-4xl font-bold mb-8">
           Admin Orders
@@ -25,37 +76,87 @@ export default async function AdminOrdersPage() {
                 <th className="p-4 text-left">Amount</th>
                 <th className="p-4 text-left">Payment ID</th>
                 <th className="p-4 text-left">Status</th>
+                <th className="p-4 text-left">Actions</th>
+                <th className="p-4 text-left">Date</th>
               </tr>
             </thead>
 
             <tbody>
               {orders.length === 0 ? (
                 <tr>
-                  <td className="p-4" colSpan={5}>
+                  <td colSpan={7} className="p-6 text-center">
                     No Orders Yet
                   </td>
                 </tr>
               ) : (
                 orders.map((order: any) => (
-                  <tr key={order._id}>
-                    <td className="p-4 border-b">
+                  <tr
+                    key={order._id}
+                    className="border-b hover:bg-gray-50"
+                  >
+                    <td className="p-4">
                       {order.customer?.name}
                     </td>
 
-                    <td className="p-4 border-b">
+                    <td className="p-4">
                       {order.customer?.phone}
                     </td>
 
-                    <td className="p-4 border-b">
+                    <td className="p-4 font-semibold">
                       ₹{order.total}
                     </td>
 
-                    <td className="p-4 border-b">
+                    <td className="p-4">
                       {order.paymentId}
                     </td>
 
-                    <td className="p-4 border-b text-green-600 font-semibold">
-                      Paid
+                    <td className="p-4">
+                      <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-sm font-semibold">
+                        {order.status}
+                      </span>
+                    </td>
+
+                    <td className="p-4">
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() =>
+                            updateStatus(order._id, "Confirmed")
+                          }
+                          className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                        >
+                          Confirm
+                        </button>
+
+                        <button
+                          onClick={() =>
+                            updateStatus(order._id, "Shipped")
+                          }
+                          className="bg-purple-500 text-white px-3 py-1 rounded hover:bg-purple-600"
+                        >
+                          Ship
+                        </button>
+
+                        <button
+                          onClick={() =>
+                            updateStatus(order._id, "Delivered")
+                          }
+                          className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+                        >
+                          Deliver
+                        </button>
+                        <Link
+  href={`/admin/orders/${order._id}`}
+  className="bg-gray-800 text-white px-3 py-1 rounded hover:bg-black"
+>
+  View
+</Link>
+                      </div>
+                    </td>
+
+                    <td className="p-4">
+                      {order.createdAt
+                        ? new Date(order.createdAt).toLocaleDateString()
+                        : "-"}
                     </td>
                   </tr>
                 ))

@@ -9,9 +9,18 @@ export default function Hero() {
       <div className="absolute inset-0 bg-black/60"></div>
 
       <div className="relative z-10 text-center text-white px-6 max-w-4xl">
-        <h1 className="text-6xl md:text-8xl font-extrabold leading-tight">
-          Kashmir Royale Shawls
-        </h1>
+        <div className="inline-block border border-yellow-500/40 rounded-full px-5 py-2 mb-6 bg-black/20 backdrop-blur-sm">
+  <span className="text-yellow-300 text-sm tracking-[0.3em] uppercase">
+    Since 1995 • Authentic Kashmiri Craftsmanship
+  </span>
+</div>
+
+<h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold leading-tight text-white">
+  Kashmir Royale Shawls
+</h1>
+<p className="mt-3 text-2xl md:text-3xl font-light text-white">
+  Luxury Shawls & Premium Pashmina
+</p>
 
         <p className="mt-8 text-2xl text-yellow-400 font-semibold">
           Authentic Kashmiri Shawls • Pashmina • Luxury Suits Since 1995

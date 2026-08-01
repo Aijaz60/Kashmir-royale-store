@@ -1,123 +1,217 @@
 "use client";
 
-import ProductCard from "../../components/ProductCard";
-import { CartContext } from "../../context/CartContext";
-import { useState, useContext } from "react";
+import { useState, useEffect, useContext } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import {
+  FaHeart,
   FaStar,
   FaTruck,
   FaShieldAlt,
-  FaHeart,
+  FaWhatsapp,
 } from "react-icons/fa";
 
-export default function ProductDetailsPage() {
-  const images = [
-    "/images/shawl1.jpg",
-    "/images/shawl2.jpg",
-  ];
+import { CartContext } from "../../context/CartContext";
+import Navbar from "../../components/Navbar";
+import Footer from "../../components/Footer";
 
-  const [selectedImage, setSelectedImage] = useState(images[0]);
-  const [quantity, setQuantity] = useState(1);
+type Product = {
+  _id: string;
+  title: string;
+  description: string;
+  price: number;
+  oldPrice: number;
+  discount: string;
+  rating: string;
+  image: string;
+  category: string;
+};
+
+export default function ProductDetailsPage() {
+  const params = useParams();
 
   const { addToCart } = useContext(CartContext);
 
-  return (
-    <main className="min-h-screen pt-32 px-8 bg-white">
-      <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12">
+  const [product, setProduct] = useState<Product | null>(null);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
-        {/* Left */}
+  const [selectedImage, setSelectedImage] = useState("");
+  const [quantity, setQuantity] = useState(1);
+
+  useEffect(() => {
+    async function loadProduct() {
+      try {
+        const res = await fetch(`/api/product/${params.id}`);
+
+        if (!res.ok) {
+          setLoading(false);
+          return;
+        }
+
+        const data: Product = await res.json();
+
+        setProduct(data);
+
+        setSelectedImage(data.image);
+        const relatedRes = await fetch("/api/products");
+
+if (relatedRes.ok) {
+  const allProducts: Product[] = await relatedRes.json();
+
+  console.log("Current Product Category:", data.category);
+console.log("All Products:", allProducts);
+  const filtered = allProducts
+    .filter(
+      (item) =>
+        item.category === data.category &&
+        item._id !== data._id
+    )
+    .slice(0, 4);
+
+  setRelatedProducts(filtered);
+  console.log("Filtered Products:", filtered);
+}
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadProduct();
+  }, [params.id]);
+
+  if (loading) {
+    return (
+      <main className="min-h-screen flex items-center justify-center">
+        <h1 className="text-3xl font-bold">
+          Loading Product...
+        </h1>
+      </main>
+    );
+  }
+
+  if (!product) {
+    return (
+      <main className="min-h-screen flex items-center justify-center">
+        <h1 className="text-3xl font-bold">
+          Product Not Found
+        </h1>
+      </main>
+    );
+  }
+
+  return (
+  <>
+    <Navbar />
+
+    <main className="min-h-screen bg-white pt-32 px-8">
+      <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-16">
+
+          {/* Left Side */}
         <div>
           <Image
             src={selectedImage}
-            alt="Premium Shawl"
+            alt={product.title}
             width={700}
             height={700}
-            className="rounded-2xl shadow-xl w-full hover:scale-105 transition duration-500"
+            className="w-full rounded-3xl border border-gray-200 shadow-2xl"
           />
 
-          <div className="flex gap-4 mt-5">
-            {images.map((img) => (
+          <div className="mt-5 flex justify-center">
+            <button
+              onClick={() => setSelectedImage(product.image)}
+              className={`rounded-xl border-2 p-1 ${
+                selectedImage === product.image
+                  ? "border-yellow-500"
+                  : "border-gray-300"
+              }`}
+            >
               <Image
-                key={img}
-                src={img}
-                alt="Thumbnail"
+                src={product.image}
+                alt={product.title}
                 width={90}
                 height={90}
-                onClick={() => setSelectedImage(img)}
-                className="rounded-lg border cursor-pointer hover:border-yellow-500"
+                className="rounded-lg"
               />
-            ))}
+            </button>
           </div>
         </div>
 
-        {/* Right */}
+        {/* Right Side */}
         <div>
+          <div className="inline-block rounded-full bg-yellow-100 px-4 py-2 text-sm font-semibold text-yellow-700">
+            ✨ Authentic Kashmiri Craftsmanship Since 1995
+          </div>
 
-          <div className="flex items-center justify-between">
-            <h1 className="text-5xl font-bold">
-              Premium Kashmiri Shawl
-            </h1>
+          <div className="mt-6 flex items-start justify-between">
+            <div>
+              <h1 className="text-5xl font-extrabold">
+                {product.title}
+              </h1>
 
-            <button className="border rounded-full p-3 hover:bg-red-100">
-              <FaHeart className="text-red-500 text-xl" />
+              <p className="mt-3 text-lg text-gray-500">
+                Handwoven Luxury Collection
+              </p>
+            </div>
+
+            <button className="rounded-full border p-4 hover:bg-red-50">
+              <FaHeart className="text-2xl text-red-500" />
             </button>
           </div>
 
-          <div className="flex items-center gap-2 mt-5">
-            <FaStar className="text-yellow-500" />
-            <FaStar className="text-yellow-500" />
-            <FaStar className="text-yellow-500" />
-            <FaStar className="text-yellow-500" />
-            <FaStar className="text-yellow-500" />
+          <div className="mt-6 flex items-center gap-2 text-yellow-500">
+            <FaStar />
+            <FaStar />
+            <FaStar />
+            <FaStar />
+            <FaStar />
 
-            <span className="text-gray-500">
-              (245 Reviews)
+            <span className="ml-2 text-gray-500">
+              ({product.rating})
             </span>
           </div>
 
-          <div className="mt-6 flex items-center gap-4">
-            <span className="text-4xl font-bold text-yellow-600">
-              ₹4,999
-            </span>
+          <div className="mt-8 rounded-2xl border border-yellow-200 bg-yellow-50 p-6">
+            <div className="flex items-center gap-4">
+              <span className="text-5xl font-extrabold text-yellow-600">
+                ₹{product.price.toLocaleString()}
+              </span>
 
-            <span className="line-through text-gray-500">
-              ₹6,999
-            </span>
+              <span className="text-2xl text-gray-400 line-through">
+                ₹{product.oldPrice.toLocaleString()}
+              </span>
 
-            <span className="bg-red-600 text-white px-3 py-1 rounded-full text-sm">
-              29% OFF
-            </span>
+              <span className="rounded-full bg-red-600 px-3 py-1 text-white">
+                {product.discount}% OFF
+              </span>
+            </div>
           </div>
 
-          <p className="mt-6 text-gray-600 leading-8">
-            Authentic handcrafted Kashmiri shawl made by experienced artisans.
-            Soft, luxurious and perfect for every season.
+          <p className="mt-8 leading-8 text-gray-600">
+            {product.description}
           </p>
 
-          <div className="space-y-3 mt-8">
-
+          <div className="mt-8 space-y-3">
             <div className="flex items-center gap-3">
               <FaTruck className="text-yellow-500" />
-              <span>Free Shipping Across India</span>
+              Free Shipping Across India
             </div>
 
             <div className="flex items-center gap-3">
               <FaShieldAlt className="text-green-600" />
-              <span>100% Secure Payment</span>
+              100% Secure Payment
             </div>
-
           </div>
 
-          {/* Quantity */}
-          <div className="flex items-center gap-4 mt-8">
-
+          <div className="mt-8 flex items-center gap-4">
             <button
               onClick={() =>
                 quantity > 1 && setQuantity(quantity - 1)
               }
-              className="border w-10 h-10 rounded-lg"
+              className="h-10 w-10 rounded border"
             >
               -
             </button>
@@ -128,122 +222,100 @@ export default function ProductDetailsPage() {
 
             <button
               onClick={() => setQuantity(quantity + 1)}
-              className="border w-10 h-10 rounded-lg"
+              className="h-10 w-10 rounded border"
             >
               +
             </button>
-
           </div>
 
-          {/* Buttons */}
           <div className="mt-10 space-y-4">
 
-            <button
+                    <button
               onClick={() => {
                 for (let i = 0; i < quantity; i++) {
                   addToCart({
-                    id: 1,
-                    title: "Premium Kashmiri Shawl",
-                    price: 4999,
-                    image: "/images/shawl1.jpg",
+                    id: product._id,
+                    title: product.title,
+                    price: product.price,
+                    image: product.image,
                   });
                 }
 
                 alert("Product Added to Cart");
               }}
-              className="w-full bg-yellow-500 hover:bg-yellow-400 py-4 rounded-xl font-bold"
+              className="w-full rounded-xl bg-yellow-500 py-4 text-lg font-bold transition hover:bg-yellow-400"
             >
               🛒 Add to Cart
             </button>
 
             <Link href="/checkout">
-              <button className="w-full bg-black text-white py-4 rounded-xl font-bold">
-                Buy Now
+              <button className="w-full rounded-xl bg-black py-4 text-lg font-bold text-white transition hover:bg-gray-900">
+                ⚡ Buy Now
               </button>
             </Link>
 
+            <a
+              href={`https://wa.me/917298129017?text=${encodeURIComponent(
+                `Hello, I want to order "${product.title}" for ₹${product.price}.`
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 py-4 text-lg font-bold text-white transition hover:bg-green-700"
+            >
+              <FaWhatsapp className="text-2xl" />
+              WhatsApp Order
+            </a>
+
             <Link
               href="/cart"
-              className="block w-full border-2 border-black py-4 rounded-xl font-bold text-center hover:bg-black hover:text-white"
+              className="block w-full rounded-xl border-2 border-black py-4 text-center text-lg font-bold transition hover:bg-black hover:text-white"
             >
-              Go to Cart
+              View Cart
             </Link>
+          </div>
+        </div>
+      </div>
+      {/* Related Products */}
+<div className="max-w-7xl mx-auto mt-20">
+  <h2 className="text-3xl font-bold mb-8">
+    Related Products
+  </h2>
 
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+    {relatedProducts.map((item) => (
+      <Link key={item._id} href={`/product/${item._id}`}>
+        <div className="rounded-2xl border border-gray-200 shadow-lg hover:shadow-xl transition overflow-hidden cursor-pointer">
+
+          <Image
+            src={item.image}
+            alt={item.title}
+            width={400}
+            height={400}
+            className="w-full h-72 object-cover"
+          />
+
+          <div className="p-5">
+            <h3 className="font-bold text-lg line-clamp-2">
+              {item.title}
+            </h3>
+
+            <p className="mt-3 text-yellow-600 font-bold text-xl">
+              ₹{item.price.toLocaleString()}
+            </p>
+
+            <p className="text-gray-400 line-through">
+              ₹{item.oldPrice.toLocaleString()}
+            </p>
           </div>
 
         </div>
+      </Link>
+    ))}
+  </div>
+</div>
+           </main>
 
-      </div>
-
-      {/* Related Products */}
-      <section className="max-w-7xl mx-auto mt-20 pb-20">
-
-        <h2 className="text-4xl font-bold text-center mb-10">
-          Related Products
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-
-          <ProductCard
-          id={1}
-  image="/images/shawl1.jpg"
-  title="Premium Kashmiri Shawl"
-  description="Soft handcrafted premium shawl."
-  price="₹4,999"
-  oldPrice="₹6,999"
-  discount="29% OFF"
-  rating="245"
-  onAddToCart={() =>
-    addToCart({
-      id: 1,
-      title: "Premium Kashmiri Shawl",
-      price: 4999,
-      image: "/images/shawl1.jpg",
-    })
-  }
-/>
-
-          <ProductCard
-          id={2}
-  image="/images/shawl2.jpg"
-  title="Luxury Pashmina"
-  description="Authentic handmade Pashmina."
-  price="₹8,999"
-  oldPrice="₹10,999"
-  discount="18% OFF"
-  rating="180"
-  onAddToCart={() =>
-    addToCart({
-      id: 2,
-      title: "Luxury Pashmina",
-      price: 8999,
-      image: "/images/shawl2.jpg",
-    })
-  }
-/>
-
-          <ProductCard
-          id={3}
-  image="/images/suit1.jpg"
-  title="Designer Suit"
-  description="Elegant designer suit collection."
-  price="₹3,499"
-  oldPrice="₹4,999"
-  discount="30% OFF"
-  rating="150"
-  onAddToCart={() =>
-    addToCart({
-      id: 3,
-      title: "Designer Suit",
-      price: 3499,
-      image: "/images/suit1.jpg",
-    })
-  }
-/>
-
-        </div>
-
-      </section>
-    </main>
-  );
+    <Footer />
+  </>
+);
 }

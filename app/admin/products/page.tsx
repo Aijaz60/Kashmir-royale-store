@@ -1,31 +1,95 @@
 "use client";
 
-import { products } from "../../../data/products";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
+type Product = {
+  _id: string;
+  title: string;
+  description: string;
+  price: number;
+  oldPrice: number;
+  discount: string;
+  rating: string;
+  image: string;
+};
+
 export default function AdminProductsPage() {
+  
+const deleteProduct = async (id: string) => {
+  const res = await fetch(`/api/delete-product/${id}`, {
+    method: "DELETE",
+  });
+
+  const data = await res.json();
+
+  if (data.success) {
+    alert("✅ Product Deleted");
+
+    setProducts((prev) =>
+      prev.filter((product) => product._id !== id)
+    );
+  } else {
+    alert("❌ Failed to delete product");
+  }
+};
+  const [products, setProducts] = useState<Product[]>([]);
+  const [search, setSearch] = useState("");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+const filteredProducts = products.filter((product) =>
+  product.title.toLowerCase().includes(search.toLowerCase())
+);
+  useEffect(() => {
+    fetch("/api/products")
+      .then((res) => res.json())
+      .then((data) => setProducts(data))
+      .catch((err) => console.error(err));
+  }, []);
+  
+
   return (
     <main className="min-h-screen bg-gray-100 pt-32 px-8">
       <div className="max-w-7xl mx-auto">
+        
+          <div>
+  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-10">
 
-        <div className="flex justify-between items-center mb-10">
-          <h1 className="text-4xl font-bold">
-            Manage Products
-          </h1>
+  <div>
+    <h1 className="text-4xl font-bold">
+      Manage Products
+    </h1>
 
-          <Link
-            href="/admin/products/add"
-            className="bg-yellow-500 hover:bg-yellow-400 px-6 py-3 rounded-xl font-bold"
-          >
-            + Add Product
-          </Link>
+    <p className="text-gray-500 mt-2">
+      Total Products: {products.length}
+    </p>
+  </div>
+
+  <div className="flex gap-4">
+
+    <input
+      type="text"
+      placeholder="Search Product..."
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+      className="border rounded-xl px-4 py-3 w-64 outline-none focus:ring-2 focus:ring-yellow-500"
+    />
+
+    <Link
+      href="/admin/products/add"
+      className="bg-yellow-500 hover:bg-yellow-400 px-6 py-3 rounded-xl font-bold"
+    >
+      + Add Product
+    </Link>
+
+  </div>
+
+</div>
         </div>
 
         <div className="overflow-x-auto bg-white rounded-xl shadow">
-
           <table className="w-full">
-
             <thead className="bg-black text-white">
               <tr>
                 <th className="p-4 text-left">Image</th>
@@ -38,56 +102,140 @@ export default function AdminProductsPage() {
             </thead>
 
             <tbody>
-              {products.map((product) => (
-                <tr key={product.id} className="border-b">
+  {filteredProducts.length === 0 ? (
+    <tr>
+      <td colSpan={6} className="py-16 text-center">
 
-                  <td className="p-4">
-                    <Image
-                      src={product.image}
-                      alt={product.title}
-                      width={70}
-                      height={70}
-                      className="rounded-lg"
-                    />
-                  </td>
+        <div className="flex flex-col items-center">
 
-                  <td className="p-4 font-semibold">
-                    {product.title}
-                  </td>
+          <div className="text-6xl">
+            📦
+          </div>
 
-                  <td className="p-4">
-                    ₹{product.price.toLocaleString()}
-                  </td>
+          <h2 className="mt-4 text-2xl font-bold">
+            No Products Found
+          </h2>
 
-                  <td className="p-4">
-                    {product.discount}
-                  </td>
+          <p className="mt-2 text-gray-500">
+            There are no products available yet.
+          </p>
 
-                  <td className="p-4">
-                    ⭐ {product.rating}
-                  </td>
-
-                  <td className="p-4 flex justify-center gap-3">
-
-                    <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-                      Edit
-                    </button>
-
-                    <button className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
-                      Delete
-                    </button>
-
-                  </td>
-
-                </tr>
-              ))}
-            </tbody>
-
-          </table>
+          <Link
+            href="/admin/products/add"
+            className="mt-6 rounded-xl bg-yellow-500 px-6 py-3 font-bold hover:bg-yellow-400"
+          >
+            + Add Product
+          </Link>
 
         </div>
 
+      </td>
+    </tr>
+  ) : (
+    filteredProducts.map((product) => (
+      <tr key={product._id} className="border-b">
+        <td className="p-4">
+          <Image
+            src={product.image || "/images/hero.jpg"}
+            alt={product.title}
+            width={70}
+            height={70}
+            className="rounded-lg object-cover"
+          />
+        </td>
+
+        <td className="p-4 font-semibold">
+          {product.title}
+        </td>
+
+        <td className="p-4">
+          ₹{Number(product.price).toLocaleString()}
+        </td>
+
+        <td className="p-4">
+          {product.discount}
+        </td>
+
+        <td className="p-4">
+          ⭐ {product.rating}
+        </td>
+
+        <td className="p-4">
+          <div className="flex justify-center gap-3">
+
+            <Link href={`/admin/products/edit/${product._id}`}>
+              <button
+                type="button"
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+              >
+                Edit
+              </button>
+            </Link>
+
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedProductId(product._id);
+                setShowDeleteModal(true);
+              }}
+              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+            >
+              Delete
+            </button>
+
+          </div>
+        </td>
+      </tr>
+    ))
+  )}
+</tbody>
+
+          </table>
+        </div>
       </div>
+      {showDeleteModal && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+    <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">
+
+      <h2 className="text-2xl font-bold text-red-600">
+        Delete Product
+      </h2>
+
+      <p className="mt-4 text-gray-600">
+        Are you sure you want to delete this product?
+      </p>
+
+      <div className="mt-8 flex justify-end gap-4">
+
+        <button
+          onClick={() => {
+            setShowDeleteModal(false);
+            setSelectedProductId(null);
+          }}
+          className="rounded-xl border border-gray-300 px-5 py-2 hover:bg-gray-100"
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={() => {
+            if (selectedProductId) {
+              deleteProduct(selectedProductId);
+            }
+
+            setShowDeleteModal(false);
+            setSelectedProductId(null);
+          }}
+          className="rounded-xl bg-red-600 px-5 py-2 font-semibold text-white hover:bg-red-700"
+        >
+          Delete
+        </button>
+
+      </div>
+
+    </div>
+  </div>
+)}
     </main>
   );
 }
