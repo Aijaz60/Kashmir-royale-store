@@ -81,7 +81,9 @@ export default async function OrderDetailsPage({
 
             <p className="mt-2">
               <strong>Date:</strong>{" "}
-              {new Date(order.createdAt).toLocaleString()}
+              {order.createdAt
+  ? new Date(order.createdAt).toLocaleString()
+  : "-"}
             </p>
 
             <h3 className="text-3xl font-bold text-green-600 mt-6">
@@ -107,13 +109,13 @@ export default async function OrderDetailsPage({
                 key={item._id || item.title}
                 className="flex items-center gap-6 border-b pb-5"
               >
-                <Image
-                  src={item.image}
-                  alt={item.title}
-                  width={90}
-                  height={90}
-                  className="rounded-lg object-cover"
-                />
+               <Image
+  src={item.image || "/images/placeholder.jpg"}
+  alt={item.title || "Product"}
+  width={90}
+  height={90}
+  className="rounded-lg object-cover"
+/>
 
                 <div className="flex-1">
                   <h3 className="font-bold text-lg">

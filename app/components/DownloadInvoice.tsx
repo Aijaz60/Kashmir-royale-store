@@ -1,11 +1,10 @@
 "use client";
 
 import jsPDF from "jspdf";
-
 interface CartItem {
-  title: string;
-  price: number;
-  quantity: number;
+  title?: string;
+  price?: number;
+  quantity?: number;
 }
 
 interface Customer {
@@ -20,17 +19,16 @@ interface Order {
   orderId?: string;
   paymentId?: string;
   createdAt?: string;
-  total: number;
-  cart: CartItem[];
+  total?: number;
+  cart?: CartItem[];
   customer?: Customer;
   status?: string;
 }
-
-export default function DownloadInvoice({
-  order,
-}: {
+type Props = {
   order: Order;
-}) {
+};
+
+export default function DownloadInvoice({ order }: Props) {
   const downloadInvoice = () => {
     const doc = new jsPDF({
       orientation: "portrait",
@@ -94,17 +92,18 @@ export default function DownloadInvoice({
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
 
-   doc.text(
-  new Date(order.createdAt ?? Date.now()).toLocaleDateString(),
-  190,
-  28,
-  {
-    align: "right",
-  }
-);
+    doc.text(
+      new Date(order.createdAt ?? Date.now()).toLocaleDateString(),
+      190,
+      28,
+      {
+        align: "right",
+      }
+    );
 
     y = 48;
-        // ==========================
+
+    // ==========================
     // CUSTOMER DETAILS
     // ==========================
 
@@ -120,7 +119,11 @@ export default function DownloadInvoice({
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
 
-    doc.text(`Name: ${order.customer?.name || "Customer"}`, 16, y + 18);
+    doc.text(
+      `Name: ${order.customer?.name || "Customer"}`,
+      16,
+      y + 18
+    );
 
     doc.text(
       `Email: ${order.customer?.email || "-"}`,
@@ -147,7 +150,6 @@ export default function DownloadInvoice({
 
     doc.setFillColor(...LIGHT);
     doc.roundedRect(110, y, 88, 48, 3, 3, "F");
-
     doc.setFont("helvetica", "bold");
     doc.setFontSize(12);
 
@@ -157,19 +159,19 @@ export default function DownloadInvoice({
     doc.setFontSize(10);
 
     doc.text(
-      `Invoice: INV-${order.orderId}`,
+      `Invoice: INV-${order.orderId ?? "-"}`,
       114,
       y + 18
     );
 
     doc.text(
-      `Order ID: ${order.orderId}`,
+      `Order ID: ${order.orderId ?? "-"}`,
       114,
       y + 26
     );
 
     doc.text(
-      `Payment ID: ${order.paymentId}`,
+      `Payment ID: ${order.paymentId ?? "-"}`,
       114,
       y + 34
     );
@@ -190,7 +192,8 @@ export default function DownloadInvoice({
     doc.setTextColor(...BLACK);
 
     y += 60;
-        // ==========================
+
+    // ==========================
     // PRODUCTS TABLE
     // ==========================
 
@@ -222,8 +225,7 @@ export default function DownloadInvoice({
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
 
-    order.cart.forEach((item, index) => {
-
+    (order.cart ?? []).forEach((item: CartItem, index: number) => {
       if (index % 2 === 0) {
         doc.setFillColor(248, 248, 248);
       } else {
@@ -232,26 +234,29 @@ export default function DownloadInvoice({
 
       doc.roundedRect(12, y - 4, 186, 10, 1, 1, "F");
 
-      const lineTotal = item.price * item.quantity;
+      const lineTotal =
+        (item.price ?? 0) * (item.quantity ?? 0);
 
       doc.setTextColor(...BLACK);
 
+      const title = item.title ?? "";
+
       doc.text(
-        item.title.length > 40
-          ? item.title.substring(0, 40) + "..."
-          : item.title,
+        title.length > 40
+          ? title.substring(0, 40) + "..."
+          : title,
         16,
         y + 2
       );
 
       doc.text(
-        String(item.quantity),
+        String(item.quantity ?? 0),
         124,
         y + 2
       );
 
       doc.text(
-        money(item.price),
+        money(item.price ?? 0),
         145,
         y + 2
       );
@@ -273,16 +278,19 @@ export default function DownloadInvoice({
     });
 
     y += 8;
-        // ==========================
+
+    // ==========================
     // ORDER SUMMARY
     // ==========================
-
-    const subtotal = order.cart.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
+const subtotal = (order.cart ?? []).reduce(
+  (sum, item) =>
+    sum + (item.price ?? 0) * (item.quantity ?? 0),
+  0
+);
+ const shipping = Math.max(
+      0,
+      (order.total ?? 0) - subtotal
     );
-
-    const shipping = Math.max(0, order.total - subtotal);
 
     doc.setDrawColor(...GOLD);
     doc.setLineWidth(0.4);
@@ -297,7 +305,6 @@ export default function DownloadInvoice({
     doc.setFont("helvetica", "normal");
     doc.setFontSize(11);
     doc.setTextColor(...BLACK);
-
     doc.text("Subtotal", 116, y + 10);
     doc.text(money(subtotal), 192, y + 10, {
       align: "right",
@@ -319,7 +326,7 @@ export default function DownloadInvoice({
     doc.setTextColor(...GREEN);
 
     doc.text(
-      money(order.total),
+      money(order.total ?? 0),
       192,
       y + 34,
       {
@@ -330,7 +337,8 @@ export default function DownloadInvoice({
     doc.setTextColor(...BLACK);
 
     y += 55;
-        // ==========================
+
+    // ==========================
     // THANK YOU SECTION
     // ==========================
 
@@ -439,7 +447,6 @@ export default function DownloadInvoice({
         align: "center",
       }
     );
-
     // ==========================
     // SAVE PDF
     // ==========================
@@ -456,3 +463,4 @@ export default function DownloadInvoice({
     </button>
   );
 }
+

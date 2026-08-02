@@ -146,9 +146,11 @@ export default function AdminOrdersPage() {
                         </button>
                         <Link
   href={`/admin/orders/${order._id}`}
-  className="bg-gray-800 text-white px-3 py-1 rounded hover:bg-black"
+  prefetch={false}
 >
-  View
+  <button className="bg-black text-white px-3 py-1 rounded">
+    View
+  </button>
 </Link>
                       </div>
                     </td>

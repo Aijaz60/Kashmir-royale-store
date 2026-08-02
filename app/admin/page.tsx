@@ -208,13 +208,19 @@ export default function AdminPage() {
         key={product._id}
         className="bg-white rounded-2xl shadow p-5"
       >
-        <Image
-          src={product.image}
-          alt={product.title}
-          width={300}
-          height={220}
-          className="rounded-xl h-52 w-full object-cover"
-        />
+        <pre>{JSON.stringify(product, null, 2)}</pre>
+       {product.image && product.image.trim() ? (
+  <Image
+    src={product.image}
+    alt={product.title || "Product"}
+    width={300}
+    height={300}
+  />
+) : (
+  <div className="w-[300px] h-[300px] flex items-center justify-center bg-gray-200 rounded">
+    No Image
+  </div>
+)}
 
         <h3 className="text-xl font-bold mt-4">
           {product.title}
