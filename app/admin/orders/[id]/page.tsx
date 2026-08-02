@@ -27,6 +27,8 @@ export default async function OrderDetailsPage({
   const { id } = await params;
 
   const order = await getOrder(id);
+  console.log("ID:", id);
+console.log("ORDER:", order);
 
   if (!order) {
     return (
@@ -91,8 +93,8 @@ export default async function OrderDetailsPage({
             </h3>
 
             <div className="mt-6">
-              <DownloadInvoice order={order as any} />
-            </div>
+  {/* <DownloadInvoice order={order as any} /> */}
+</div>
           </div>
 
         </div>

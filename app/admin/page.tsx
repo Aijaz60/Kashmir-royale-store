@@ -6,15 +6,15 @@ import { useEffect, useState } from "react";
 
 export default function AdminPage() {
   const [stats, setStats] = useState({
-  totalProducts: 0,
-  totalOrders: 0,
-  totalRevenue: 0,
-  pendingOrders: 0,
-  shippedOrders: 0,
-  deliveredOrders: 0,
-  recentOrders: [] as any[],
-  recentProducts: [] as any[],
-});
+    totalProducts: 0,
+    totalOrders: 0,
+    totalRevenue: 0,
+    pendingOrders: 0,
+    shippedOrders: 0,
+    deliveredOrders: 0,
+    recentOrders: [] as any[],
+    recentProducts: [] as any[],
+  });
 
   const [loading, setLoading] = useState(true);
 
@@ -27,16 +27,16 @@ export default function AdminPage() {
       const data = await res.json();
 
       if (data.success) {
-       setStats({
-  totalProducts: data.totalProducts,
-  totalOrders: data.totalOrders,
-  totalRevenue: data.totalRevenue,
-  pendingOrders: data.pendingOrders,
-  shippedOrders: data.shippedOrders,
-  deliveredOrders: data.deliveredOrders,
-  recentOrders: data.recentOrders || [],
-  recentProducts: data.recentProducts || [],
-});
+        setStats({
+          totalProducts: data.totalProducts,
+          totalOrders: data.totalOrders,
+          totalRevenue: data.totalRevenue,
+          pendingOrders: data.pendingOrders,
+          shippedOrders: data.shippedOrders,
+          deliveredOrders: data.deliveredOrders,
+          recentOrders: data.recentOrders || [],
+          recentProducts: data.recentProducts || [],
+        });
       }
     } catch (error) {
       console.error(error);
@@ -51,8 +51,10 @@ export default function AdminPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
-        <h2 className="text-2xl font-bold">Loading Dashboard...</h2>
+      <main className="min-h-screen flex items-center justify-center bg-gray-100">
+        <h2 className="text-3xl font-bold animate-pulse">
+          Loading Dashboard...
+        </h2>
       </main>
     );
   }
@@ -61,186 +63,274 @@ export default function AdminPage() {
     <main className="min-h-screen bg-gray-100 pt-32 px-8">
       <div className="max-w-7xl mx-auto">
 
-        <h1 className="text-4xl font-bold mb-10">
+        <h1 className="text-5xl font-extrabold mb-10">
           Admin Dashboard
         </h1>
 
-        <div className="grid md:grid-cols-3 gap-6">
+        {/* Dashboard Cards */}
 
-          <div className="bg-white rounded-2xl shadow p-6">
-            <h2 className="text-gray-500">📦 Total Products</h2>
-            <p className="text-4xl font-bold mt-3">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+
+          <div className="bg-white border border-gray-100 rounded-2xl shadow-md hover:shadow-xl transition p-6">
+            <p className="text-gray-500 text-sm uppercase">
+              📦 Products
+            </p>
+
+            <h2 className="text-4xl font-bold mt-3">
               {stats.totalProducts}
-            </p>
+            </h2>
           </div>
 
-          <div className="bg-white rounded-2xl shadow p-6">
-            <h2 className="text-gray-500">🛒 Total Orders</h2>
-            <p className="text-4xl font-bold mt-3">
+          <div className="bg-white border border-gray-100 rounded-2xl shadow-md hover:shadow-xl transition p-6">
+            <p className="text-gray-500 text-sm uppercase">
+              🛒 Orders
+            </p>
+
+            <h2 className="text-4xl font-bold mt-3">
               {stats.totalOrders}
-            </p>
+            </h2>
           </div>
 
-          <div className="bg-white rounded-2xl shadow p-6">
-            <h2 className="text-gray-500">💰 Total Revenue</h2>
-            <p className="text-4xl font-bold mt-3">
-              ₹{stats.totalRevenue}
+          <div className="bg-white border border-gray-100 rounded-2xl shadow-md hover:shadow-xl transition p-6">
+            <p className="text-gray-500 text-sm uppercase">
+              💰 Revenue
             </p>
+
+            <h2 className="text-4xl font-bold text-green-600 mt-3">
+              ₹{stats.totalRevenue.toLocaleString()}
+            </h2>
           </div>
 
-          <div className="bg-white rounded-2xl shadow p-6">
-            <h2 className="text-gray-500">⏳ Pending Orders</h2>
-            <p className="text-4xl font-bold text-yellow-600 mt-3">
+          <div className="bg-white border border-gray-100 rounded-2xl shadow-md hover:shadow-xl transition p-6">
+            <p className="text-gray-500 text-sm uppercase">
+              ⏳ Pending
+            </p>
+
+            <h2 className="text-4xl font-bold text-yellow-600 mt-3">
               {stats.pendingOrders}
-            </p>
+            </h2>
           </div>
 
-          <div className="bg-white rounded-2xl shadow p-6">
-            <h2 className="text-gray-500">🚚 Shipped Orders</h2>
-            <p className="text-4xl font-bold text-purple-600 mt-3">
+          <div className="bg-white border border-gray-100 rounded-2xl shadow-md hover:shadow-xl transition p-6">
+            <p className="text-gray-500 text-sm uppercase">
+              🚚 Shipped
+            </p>
+
+            <h2 className="text-4xl font-bold text-purple-600 mt-3">
               {stats.shippedOrders}
-            </p>
+            </h2>
           </div>
 
-          <div className="bg-white rounded-2xl shadow p-6">
-            <h2 className="text-gray-500">✅ Delivered Orders</h2>
-            <p className="text-4xl font-bold text-green-600 mt-3">
-              {stats.deliveredOrders}
+          <div className="bg-white border border-gray-100 rounded-2xl shadow-md hover:shadow-xl transition p-6">
+            <p className="text-gray-500 text-sm uppercase">
+              ✅ Delivered
             </p>
+
+            <h2 className="text-4xl font-bold text-green-700 mt-3">
+              {stats.deliveredOrders}
+            </h2>
           </div>
 
         </div>
 
+        {/* Quick Actions */}
+
         <div className="grid md:grid-cols-2 gap-6 mt-10">
 
           <Link href="/admin/products">
-            <div className="bg-white rounded-2xl shadow p-8 hover:shadow-xl transition cursor-pointer">
+            <div className="bg-white rounded-2xl shadow-md hover:shadow-xl transition p-8 cursor-pointer border border-gray-100">
               <h2 className="text-2xl font-bold">
                 📦 Manage Products
               </h2>
 
               <p className="text-gray-500 mt-2">
-                Add, Edit and Delete Products
+                Add, edit and delete products
               </p>
             </div>
           </Link>
 
           <Link href="/admin/orders">
-            <div className="bg-white rounded-2xl shadow p-8 hover:shadow-xl transition cursor-pointer">
+            <div className="bg-white rounded-2xl shadow-md hover:shadow-xl transition p-8 cursor-pointer border border-gray-100">
               <h2 className="text-2xl font-bold">
                 🛒 Manage Orders
               </h2>
 
               <p className="text-gray-500 mt-2">
-                View and Update Orders
+                View and update customer orders
               </p>
             </div>
           </Link>
 
         </div>
-{/* Recent Orders */}
-<div className="mt-12">
-  <h2 className="text-3xl font-bold mb-6">
-    🛒 Recent Orders
-  </h2>
+        {/* Recent Orders */}
 
-  <div className="bg-white rounded-2xl shadow overflow-hidden">
-    <table className="w-full">
-      <thead className="bg-yellow-500 text-black">
-        <tr>
-          <th className="p-4 text-left">Customer</th>
-          <th className="p-4 text-left">Amount</th>
-          <th className="p-4 text-left">Status</th>
-          <th className="p-4 text-left">View</th>
-        </tr>
-      </thead>
+        <div className="mt-12">
 
-      <tbody>
-        {stats.recentOrders.length === 0 ? (
-          <tr>
-            <td colSpan={4} className="p-6 text-center">
-              No Recent Orders
-            </td>
-          </tr>
-        ) : (
-          stats.recentOrders.map((order: any) => (
-            <tr
-              key={order._id}
-              className="border-b hover:bg-gray-50"
-            >
-              <td className="p-4">
-                {order.customer?.name}
-              </td>
+          <h2 className="text-3xl font-bold mb-6">
+            🛒 Recent Orders
+          </h2>
 
-              <td className="p-4 font-semibold">
-                ₹{order.total}
-              </td>
+          <div className="bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100">
 
-              <td className="p-4">
-                {order.status}
-              </td>
+            <table className="w-full">
 
-              <td className="p-4">
-                <Link
-                  href={`/admin/orders/${order._id}`}
-                  className="bg-gray-800 text-white px-3 py-2 rounded hover:bg-black"
+              <thead className="bg-yellow-500 text-black">
+
+                <tr>
+                  <th className="p-4 text-left">Customer</th>
+                  <th className="p-4 text-left">Amount</th>
+                  <th className="p-4 text-left">Status</th>
+                  <th className="p-4 text-left">Action</th>
+                </tr>
+
+              </thead>
+
+              <tbody>
+
+                {stats.recentOrders.length === 0 ? (
+
+                  <tr>
+                    <td
+                      colSpan={4}
+                      className="text-center p-8 text-gray-500"
+                    >
+                      No Recent Orders
+                    </td>
+                  </tr>
+
+                ) : (
+
+                  stats.recentOrders.map((order: any) => (
+
+                    <tr
+                      key={order._id}
+                      className="border-b hover:bg-gray-50 transition"
+                    >
+
+                      <td className="p-4 font-medium">
+                        {order.customer?.name}
+                      </td>
+
+                      <td className="p-4 font-bold">
+                        ₹{order.total}
+                      </td>
+
+                      <td className="p-4">
+
+                        <span
+                          className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                            order.status === "Delivered"
+                              ? "bg-green-100 text-green-700"
+                              : order.status === "Shipped"
+                              ? "bg-purple-100 text-purple-700"
+                              : order.status === "Confirmed"
+                              ? "bg-blue-100 text-blue-700"
+                              : "bg-yellow-100 text-yellow-700"
+                          }`}
+                        >
+                          {order.status}
+                        </span>
+
+                      </td>
+
+                      <td className="p-4">
+
+                        <Link
+                          href={`/admin/orders/${order._id}`}
+                          className="inline-block bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition"
+                        >
+                          View
+                        </Link>
+
+                      </td>
+
+                    </tr>
+
+                  ))
+
+                )}
+
+              </tbody>
+
+            </table>
+
+          </div>
+
+        </div>
+
+        {/* Recent Products */}
+
+        <div className="mt-12 mb-10">
+
+          <h2 className="text-3xl font-bold mb-6">
+            📦 Recent Products
+          </h2>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {stats.recentProducts.length === 0 ? (
+
+              <p className="text-gray-500">
+                No Products Found
+              </p>
+
+            ) : (
+
+              stats.recentProducts.map((product: any) => (
+
+                <div
+                  key={product._id}
+                  className="bg-white rounded-2xl shadow-md hover:shadow-xl transition border border-gray-100 overflow-hidden"
                 >
-                  View
-                </Link>
-              </td>
-            </tr>
-          ))
-        )}
-      </tbody>
-    </table>
-  </div>
-</div>
 
-{/* Recent Products */}
-<div className="mt-12 mb-10">
-  <h2 className="text-3xl font-bold mb-6">
-    📦 Recent Products
-  </h2>
+                  {product.image && product.image.trim() ? (
 
-  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-    {stats.recentProducts.map((product: any) => (
-      <div
-        key={product._id}
-        className="bg-white rounded-2xl shadow p-5"
-      >
-        <pre>{JSON.stringify(product, null, 2)}</pre>
-       {product.image && product.image.trim() ? (
-  <Image
-    src={product.image}
-    alt={product.title || "Product"}
-    width={300}
-    height={300}
-  />
-) : (
-  <div className="w-[300px] h-[300px] flex items-center justify-center bg-gray-200 rounded">
-    No Image
-  </div>
-)}
+                    <Image
+                      src={product.image}
+                      alt={product.title || "Product"}
+                      width={400}
+                      height={300}
+                      className="w-full h-60 object-cover"
+                    />
 
-        <h3 className="text-xl font-bold mt-4">
-          {product.title}
-        </h3>
+                  ) : (
 
-        <p className="text-yellow-600 font-bold text-lg mt-2">
-          ₹{product.price}
-        </p>
+                    <div className="w-full h-60 bg-gray-200 flex items-center justify-center text-gray-500">
+                      No Image
+                    </div>
 
-        <Link
-          href={`/admin/products/edit/${product._id}`}
-          className="inline-block mt-4 bg-yellow-500 hover:bg-yellow-400 px-4 py-2 rounded-lg font-semibold"
-        >
-          Edit Product
-        </Link>
+                  )}
+
+                  <div className="p-5">
+
+                    <h3 className="text-xl font-bold line-clamp-2">
+                      {product.title}
+                    </h3>
+
+                    <p className="text-yellow-600 text-2xl font-bold mt-3">
+                      ₹{product.price}
+                    </p>
+
+                    <Link
+                      href={`/admin/products/edit/${product._id}`}
+                      className="mt-5 block w-full text-center bg-black text-white py-3 rounded-xl hover:bg-gray-800 transition"
+                    >
+                      Edit Product
+                    </Link>
+
+                  </div>
+
+                </div>
+
+              ))
+
+            )}
+
+          </div>
+
+        </div>
+
       </div>
-    ))}
-  </div>
-</div>
-      </div>
+
     </main>
   );
 }
