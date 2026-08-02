@@ -12,10 +12,14 @@ export type CartItem = {
 
 type CartContextType = {
   cart: CartItem[];
+
   addToCart: (product: Omit<CartItem, "quantity">) => void;
   removeFromCart: (id: string | number) => void;
   increaseQuantity: (id: string | number) => void;
   decreaseQuantity: (id: string | number) => void;
+
+  // NEW
+  clearCart: () => void;
 };
 
 export const CartContext = createContext<CartContextType>(
@@ -31,7 +35,9 @@ export default function CartProvider({
 
   const addToCart = (product: Omit<CartItem, "quantity">) => {
     setCart((prevCart) => {
-      const existing = prevCart.find((item) => item.id === product.id);
+      const existing = prevCart.find(
+        (item) => item.id === product.id
+      );
 
       if (existing) {
         return prevCart.map((item) =>
@@ -46,7 +52,9 @@ export default function CartProvider({
   };
 
   const removeFromCart = (id: string | number) => {
-    setCart((prevCart) => prevCart.filter((item) => item.id !== id));
+    setCart((prevCart) =>
+      prevCart.filter((item) => item.id !== id)
+    );
   };
 
   const increaseQuantity = (id: string | number) => {
@@ -71,6 +79,11 @@ export default function CartProvider({
     );
   };
 
+  // NEW
+  const clearCart = () => {
+    setCart([]);
+  };
+
   return (
     <CartContext.Provider
       value={{
@@ -79,6 +92,7 @@ export default function CartProvider({
         removeFromCart,
         increaseQuantity,
         decreaseQuantity,
+        clearCart,
       }}
     >
       {children}

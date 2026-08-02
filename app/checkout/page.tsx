@@ -1,5 +1,8 @@
 "use client";
 
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { useRouter } from "next/navigation";
 import { useContext, useState } from "react";
 import { CartContext } from "../context/CartContext";
 
@@ -10,9 +13,12 @@ declare global {
 }
 
 export default function CheckoutPage() {
-  const { cart } = useContext(CartContext);
+  const router = useRouter();
+
+  const { cart, clearCart } = useContext(CartContext);
 
   const [loading, setLoading] = useState(false);
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -23,7 +29,107 @@ export default function CheckoutPage() {
     0
   );
 
-  const handlePayment = async () => {
+  const getBase64Image = () =>
+    new Promise<string>((resolve) => {
+      const img = new Image();
+
+      img.src = "/logo.png";
+
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+
+        canvas.width = img.width;
+        canvas.height = img.height;
+
+        const ctx = canvas.getContext("2d");
+
+        ctx?.drawImage(img, 0, 0);
+
+        resolve(canvas.toDataURL("image/png"));
+      };
+    });
+
+  const generateInvoice = async () => {
+    const doc = new jsPDF();
+
+    const logo = await getBase64Image();
+
+    doc.setFillColor(212, 175, 55);
+    doc.rect(0, 0, 210, 35, "F");
+
+    doc.addImage(logo, "PNG", 12, 5, 22, 22);
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    doc.text("Kashmir Royale", 42, 16);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    doc.text("Luxury Kashmiri Shawls", 42, 24);
+
+    doc.setFontSize(9);
+    doc.text("Srinagar, Jammu & Kashmir", 138, 12);
+    doc.text("support@kashmirroyale.com", 138, 18);
+    doc.text("+91 72981 29017", 138, 24);
+    doc.text("+91 7006819881", 138, 30);
+
+    doc.setTextColor(0, 0, 0);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.text("INVOICE", 150, 48);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+
+    doc.text(`Invoice No: INV-${Date.now()}`, 15, 48);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 15, 55);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text("Customer Details", 15, 72);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+
+    doc.text(`Name: ${name}`, 15, 80);
+    doc.text(`Email: ${email}`, 15, 87);
+    doc.text(`Phone: ${phone}`, 15, 94);
+    doc.text(`Address: ${address}`, 15, 101);
+
+    autoTable(doc, {
+      startY: 112,
+      head: [["Product", "Qty", "Price", "Total"]],
+      body: cart.map((item: any) => [
+        item.title,
+        item.quantity,
+        `₹${item.price}`,
+        `₹${item.price * item.quantity}`,
+      ]),
+      theme: "grid",
+      headStyles: {
+        fillColor: [212, 175, 55],
+      },
+    });
+
+    const finalY = (doc as any).lastAutoTable.finalY + 15;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(15);
+    doc.text(`Grand Total: ₹${total}`, 15, finalY);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    doc.text(
+      "Thank you for shopping with Kashmir Royale ❤️",
+      15,
+      finalY + 15
+    );
+
+    doc.save(`Invoice-${Date.now()}.pdf`);
+  };
+    const handlePayment = async () => {
     if (!name || !email || !phone || !address) {
       alert("Please fill in all customer details.");
       return;
@@ -101,7 +207,11 @@ export default function CheckoutPage() {
             const saveResult = await saveResponse.json();
 
             if (saveResponse.ok && saveResult.success) {
-              alert("✅ Payment Successful & Order Saved");
+              await generateInvoice();
+
+              clearCart();
+
+              router.push("/success");
             } else {
               alert("❌ Save Order Failed");
               alert(JSON.stringify(saveResult));
@@ -133,8 +243,9 @@ export default function CheckoutPage() {
     setLoading(false);
   };
     return (
-    <main className="min-h-screen pt-32 px-8 bg-gray-50">
+    <main className="min-h-screen bg-gray-50 pt-32 px-8">
       <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-8">
+
         {/* Checkout Form */}
         <div className="bg-white rounded-2xl shadow-md p-8">
           <h1 className="text-4xl font-bold mb-8">
@@ -167,8 +278,8 @@ export default function CheckoutPage() {
             />
 
             <textarea
-              placeholder="Shipping Address"
               rows={4}
+              placeholder="Shipping Address"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               className="w-full border rounded-lg px-4 py-3"
@@ -226,6 +337,7 @@ export default function CheckoutPage() {
             </>
           )}
         </div>
+
       </div>
     </main>
   );

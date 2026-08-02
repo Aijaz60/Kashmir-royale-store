@@ -25,6 +25,7 @@ type Product = {
   discount: string;
   rating: string;
   image: string;
+  images: string[]; // 👈 ye add karo
   category: string;
 };
 
@@ -287,14 +288,18 @@ console.log("All Products:", allProducts);
         <div className="rounded-2xl border border-gray-200 shadow-lg hover:shadow-xl transition overflow-hidden cursor-pointer">
 
           <Image
-            src={item.image}
-            alt={item.title}
-            width={400}
-            height={400}
-            className="w-full h-72 object-cover"
-          />
-
-          <div className="p-5">
+  
+  src={
+    item.images?.find((img: string) => img.trim() !== "") ||
+    item.image?.trim() ||
+    "/images/placeholder.jpg"
+  }
+  alt={item.title || "Product"}
+  width={400}
+   height={400}
+  className="w-full h-72 object-cover"
+/>
+           <div className="p-5">
             <h3 className="font-bold text-lg line-clamp-2">
               {item.title}
             </h3>
