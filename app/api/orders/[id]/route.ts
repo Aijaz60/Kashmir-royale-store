@@ -3,11 +3,23 @@ import { ObjectId } from "mongodb";
 import clientPromise from "../../../lib/mongodb";
 
 export async function GET(
-  req: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
+
+    if (!ObjectId.isValid(id)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid Order ID",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
 
     const client = await clientPromise;
     const db = client.db("kashmir-shawls");
@@ -28,17 +40,22 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      order,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        order,
+      },
+      {
+        status: 200,
+      }
+    );
   } catch (error) {
-    console.error(error);
+    console.error("GET ORDER ERROR:", error);
 
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to fetch order",
+        error: "Internal Server Error",
       },
       {
         status: 500,

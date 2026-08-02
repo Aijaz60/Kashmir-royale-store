@@ -1,18 +1,22 @@
 import Image from "next/image";
+import { ObjectId } from "mongodb";
+import clientPromise from "../../../lib/mongodb";
 import DownloadInvoice from "../../../components/DownloadInvoice";
 
 async function getOrder(id: string) {
-  const res = await fetch(`http://localhost:3000/api/orders/${id}`, {
-    cache: "no-store",
-  });
+  try {
+    const client = await clientPromise;
+    const db = client.db("kashmir-shawls");
 
-  const data = await res.json();
+    const order = await db.collection("orders").findOne({
+      _id: new ObjectId(id),
+    });
 
-  if (!data.success) {
+    return order;
+  } catch (error) {
+    console.error(error);
     return null;
   }
-
-  return data.order;
 }
 
 export default async function OrderDetailsPage({
@@ -21,6 +25,7 @@ export default async function OrderDetailsPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+
   const order = await getOrder(id);
 
   if (!order) {
@@ -82,9 +87,10 @@ export default async function OrderDetailsPage({
             <h3 className="text-3xl font-bold text-green-600 mt-6">
               ₹{order.total}
             </h3>
+
             <div className="mt-6">
-  <DownloadInvoice order={order} />
-</div>
+              <DownloadInvoice order={order as any} />
+            </div>
           </div>
 
         </div>

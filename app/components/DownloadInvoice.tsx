@@ -16,12 +16,14 @@ interface Customer {
 }
 
 interface Order {
-  orderId: string;
-  paymentId: string;
-  createdAt: string;
+  _id?: string;
+  orderId?: string;
+  paymentId?: string;
+  createdAt?: string;
   total: number;
   cart: CartItem[];
   customer?: Customer;
+  status?: string;
 }
 
 export default function DownloadInvoice({
@@ -92,14 +94,14 @@ export default function DownloadInvoice({
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
 
-    doc.text(
-      new Date(order.createdAt).toLocaleDateString(),
-      190,
-      28,
-      {
-        align: "right",
-      }
-    );
+   doc.text(
+  new Date(order.createdAt ?? Date.now()).toLocaleDateString(),
+  190,
+  28,
+  {
+    align: "right",
+  }
+);
 
     y = 48;
         // ==========================
@@ -442,7 +444,7 @@ export default function DownloadInvoice({
     // SAVE PDF
     // ==========================
 
-    doc.save(`Invoice-${order.orderId}.pdf`);
+    doc.save(`Invoice-${order.orderId ?? "invoice"}.pdf`);
   };
 
   return (
