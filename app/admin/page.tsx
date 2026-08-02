@@ -1,5 +1,5 @@
 "use client";
-
+import RevenueChart from "../components/RevenueChart";
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
@@ -162,6 +162,8 @@ export default function AdminPage() {
           </Link>
 
         </div>
+        <RevenueChart />
+
         {/* Recent Orders */}
 
         <div className="mt-12">

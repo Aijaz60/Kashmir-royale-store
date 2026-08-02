@@ -23,14 +23,17 @@ export default function Collections() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [search, setSearch] = useState("");
 
-  useEffect(() => {
-    fetch("/api/products")
-      .then((res) => res.json())
-      .then((data) => {
-        setProducts(data);
-      })
-      .catch((err) => console.error(err));
-  }, []);
+ useEffect(() => {
+  fetch("/api/products")
+    .then((res) => res.json())
+    .then((data) => {
+      setProducts(Array.isArray(data) ? data : []);
+    })
+    .catch((err) => {
+      console.error(err);
+      setProducts([]);
+    });
+}, []);
 
   const filteredProducts = products.filter((product) => {
     const categoryMatch =
