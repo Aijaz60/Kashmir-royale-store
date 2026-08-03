@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import clientPromise from "../../lib/mongodb";
 import { sendOrderEmail } from "../../lib/email";
+import { emailTemplate } from "../../lib/emailTemplate";
+import { generateInvoice } from "../../lib/invoice";
 
 export async function POST(req: Request) {
   try {
@@ -18,6 +20,14 @@ export async function POST(req: Request) {
       createdAt: new Date(),
     });
     if (order.customer?.email) {
+      const invoicePdf = await generateInvoice(order);
+
+const attachments = [
+  {
+    filename: `Invoice-${order.orderId ?? "invoice"}.pdf`,
+    content: invoicePdf,
+  },
+];
   await sendOrderEmail(
     order.customer.email,
     "🎉 Your Kashmir Royale Order is Confirmed",
@@ -44,6 +54,19 @@ export async function POST(req: Request) {
     `
   );
 }
+await sendOrderEmail(
+  order.customer.email,
+  "🎉 Your Kashmir Royale Order is Confirmed",
+  emailTemplate({
+    title: "Order Confirmed 🎉",
+    customerName: order.customer.name,
+    message:
+      "Thank you for your order. We have received it successfully and our team has started processing it.",
+    status: "Pending",
+    total: order.total,
+  }),
+  attachments
+);
 
     // Update inventory
     for (const item of order.cart) {

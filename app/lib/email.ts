@@ -10,15 +10,34 @@ export const transporter = nodemailer.createTransport({
   },
 });
 
+export type EmailAttachment = {
+  filename: string;
+  content: Buffer;
+  contentType?: string;
+};
+
 export async function sendOrderEmail(
   to: string,
   subject: string,
-  html: string
+  html: string,
+  attachments: EmailAttachment[] = []
 ) {
-  await transporter.sendMail({
+  const info = await transporter.sendMail({
     from: process.env.EMAIL_FROM,
     to,
     subject,
     html,
+    attachments,
   });
+
+  console.log("=================================");
+  console.log("Email Sent Successfully");
+  console.log("To:", to);
+  console.log("Subject:", subject);
+  console.log("Message ID:", info.messageId);
+  console.log("Accepted:", info.accepted);
+  console.log("Rejected:", info.rejected);
+  console.log("=================================");
+
+  return info;
 }
