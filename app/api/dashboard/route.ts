@@ -24,7 +24,28 @@ export async function GET() {
     const deliveredOrders = await ordersCollection.countDocuments({
       status: "Delivered",
     });
-
+// Monthly Revenue
+const monthlyRevenue = await ordersCollection
+  .aggregate([
+    {
+      $group: {
+        _id: {
+          year: { $year: "$createdAt" },
+          month: { $month: "$createdAt" },
+        },
+        revenue: {
+          $sum: "$total",
+        },
+      },
+    },
+    {
+      $sort: {
+        "_id.year": 1,
+        "_id.month": 1,
+      },
+    },
+  ])
+  .toArray();
     // Revenue
     const revenueData = await ordersCollection
       .aggregate([
@@ -48,6 +69,33 @@ export async function GET() {
       .sort({ createdAt: -1 })
       .limit(5)
       .toArray();
+// Top Selling Products
+const topSellingProducts = await ordersCollection
+  .aggregate([
+    {
+      $unwind: "$cart",
+    },
+    {
+      $group: {
+        _id: "$cart.title",
+        totalSold: {
+          $sum: "$cart.quantity",
+        },
+        image: {
+          $first: "$cart.image",
+        },
+      },
+    },
+    {
+      $sort: {
+        totalSold: -1,
+      },
+    },
+    {
+      $limit: 5,
+    },
+  ])
+  .toArray();
 
     // Recent Products
     const recentProducts = await productsCollection
@@ -66,6 +114,8 @@ export async function GET() {
       deliveredOrders,
       recentOrders,
       recentProducts,
+      monthlyRevenue,
+      topSellingProducts,
     });
   } catch (error) {
     console.error(error);

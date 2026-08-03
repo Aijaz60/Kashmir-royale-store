@@ -14,6 +14,8 @@ export default function AdminPage() {
     deliveredOrders: 0,
     recentOrders: [] as any[],
     recentProducts: [] as any[],
+    monthlyRevenue: [] as any[],
+    topSellingProducts: [] as any[],
   });
 
   const [loading, setLoading] = useState(true);
@@ -36,6 +38,8 @@ export default function AdminPage() {
           deliveredOrders: data.deliveredOrders,
           recentOrders: data.recentOrders || [],
           recentProducts: data.recentProducts || [],
+          monthlyRevenue: data.monthlyRevenue || [],
+          topSellingProducts: data.topSellingProducts || [],
         });
       }
     } catch (error) {
@@ -162,7 +166,7 @@ export default function AdminPage() {
           </Link>
 
         </div>
-        <RevenueChart />
+        <RevenueChart data={stats.monthlyRevenue} />
 
         {/* Recent Orders */}
 
@@ -259,7 +263,59 @@ export default function AdminPage() {
           </div>
 
         </div>
+{/* Top Selling Products */}
+<div className="mt-12">
+  <h2 className="text-3xl font-bold mb-6">
+    🏆 Top Selling Products
+  </h2>
 
+  <div className="bg-white rounded-2xl shadow p-6">
+    {stats.topSellingProducts.length === 0 ? (
+      <p className="text-gray-500">
+        No sales yet.
+      </p>
+    ) : (
+      <div className="space-y-4">
+        {stats.topSellingProducts.map((product: any, index: number) => (
+          <div
+            key={product._id}
+            className="flex items-center justify-between border-b pb-3"
+          >
+            <div className="flex items-center gap-4">
+              {product.image ? (
+                <Image
+                  src={product.image}
+                  alt={product._id}
+                  width={60}
+                  height={60}
+                  className="rounded-lg object-cover"
+                />
+              ) : (
+                <div className="w-[60px] h-[60px] bg-gray-200 rounded-lg flex items-center justify-center">
+                  📦
+                </div>
+              )}
+
+              <div>
+                <h3 className="font-bold">
+                  {index + 1}. {product._id}
+                </h3>
+
+                <p className="text-gray-500 text-sm">
+                  Total Sold: {product.totalSold}
+                </p>
+              </div>
+            </div>
+
+            <span className="text-green-600 font-bold">
+              {product.totalSold} pcs
+            </span>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+</div>
         {/* Recent Products */}
 
         <div className="mt-12 mb-10">

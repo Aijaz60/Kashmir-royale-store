@@ -8,6 +8,7 @@ import {
   LineElement,
   Tooltip,
   Legend,
+  Filler,
 } from "chart.js";
 
 import { Line } from "react-chartjs-2";
@@ -18,26 +19,62 @@ ChartJS.register(
   PointElement,
   LineElement,
   Tooltip,
-  Legend
+  Legend,
+  Filler
 );
 
-export default function RevenueChart() {
-  const data = {
-    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+type RevenueItem = {
+  _id: {
+    year: number;
+    month: number;
+  };
+  revenue: number;
+};
+
+type Props = {
+  data: RevenueItem[];
+};
+
+export default function RevenueChart({ data }: Props) {
+  const monthNames = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+
+  const labels = data.map(
+    (item) => monthNames[item._id.month - 1]
+  );
+
+  const revenue = data.map(
+    (item) => item.revenue
+  );
+
+  const chartData = {
+    labels,
 
     datasets: [
       {
         label: "Revenue",
 
-        data: [12000, 19000, 15000, 28000, 35000, 42000],
+        data: revenue,
 
         borderColor: "#D4AF37",
 
-        backgroundColor: "rgba(212,175,55,0.2)",
-
-        tension: 0.4,
+        backgroundColor: "rgba(212,175,55,0.25)",
 
         fill: true,
+
+        tension: 0.4,
       },
     ],
   };
@@ -58,7 +95,10 @@ export default function RevenueChart() {
         📈 Revenue Overview
       </h2>
 
-      <Line data={data} options={options} />
+      <Line
+        data={chartData}
+        options={options}
+      />
     </div>
   );
 }

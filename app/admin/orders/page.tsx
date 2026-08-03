@@ -1,10 +1,17 @@
 "use client";
+
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+
 
   async function loadOrders() {
     try {
@@ -50,7 +57,40 @@ export default function AdminOrdersPage() {
       alert("Something went wrong");
     }
   }
+function exportToExcel() {
+  const data = filteredOrders.map((order: any) => ({
+    Customer: order.customer?.name,
+    Email: order.customer?.email,
+    Phone: order.customer?.phone,
+    Amount: order.total,
+    Status: order.status,
+    PaymentID: order.paymentId,
+    OrderID: order.orderId,
+    Date: order.createdAt
+      ? new Date(order.createdAt).toLocaleString()
+      : "",
+  }));
 
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(
+    workbook,
+    worksheet,
+    "Orders"
+  );
+
+  const excelBuffer = XLSX.write(workbook, {
+    bookType: "xlsx",
+    type: "array",
+  });
+
+  const file = new Blob([excelBuffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+
+  saveAs(file, "Orders.xlsx");
+}
   if (loading) {
     return (
       <main className="min-h-screen flex items-center justify-center">
@@ -60,12 +100,61 @@ export default function AdminOrdersPage() {
       </main>
     );
   }
+  const filteredOrders = orders.filter((order: any) => {
+  const matchesSearch =
+    order.customer?.name
+      ?.toLowerCase()
+      .includes(search.toLowerCase()) ||
+    order.paymentId
+      ?.toLowerCase()
+      .includes(search.toLowerCase());
+
+  const matchesStatus =
+    statusFilter === "All" ||
+    order.status === statusFilter;
+
+  return matchesSearch && matchesStatus;
+});
     return (
     <main className="min-h-screen bg-gray-100 pt-32 px-8">
       <div className="max-w-7xl mx-auto">
         <h1 className="text-4xl font-bold mb-8">
           Admin Orders
         </h1>
+        <div className="flex justify-end mb-6">
+  <button
+    onClick={exportToExcel}
+    className="bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-3 rounded-lg transition"
+  >
+    📊 Export Orders to Excel
+  </button>
+</div>
+        <div className="flex flex-col md:flex-row gap-4 mb-8">
+          <div className="mb-6 text-gray-600 font-medium">
+  Showing <span className="font-bold">{filteredOrders.length}</span> of{" "}
+  <span className="font-bold">{orders.length}</span> orders
+</div>
+
+  <input
+    type="text"
+    placeholder="Search by customer or payment ID..."
+    value={search}
+    onChange={(e) => setSearch(e.target.value)}
+    className="flex-1 border rounded-lg px-4 py-3"
+  />
+
+  <select
+    value={statusFilter}
+    onChange={(e) => setStatusFilter(e.target.value)}
+    className="border rounded-lg px-4 py-3"
+  >
+    <option value="All">All Status</option>
+    <option value="Pending">Pending</option>
+    <option value="Confirmed">Confirmed</option>
+    <option value="Shipped">Shipped</option>
+    <option value="Delivered">Delivered</option>
+  </select>
+</div>
 
         <div className="bg-white rounded-2xl shadow-md overflow-hidden">
           <table className="w-full">
@@ -82,14 +171,14 @@ export default function AdminOrdersPage() {
             </thead>
 
             <tbody>
-              {orders.length === 0 ? (
+              {filteredOrders.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="p-6 text-center">
                     No Orders Yet
                   </td>
                 </tr>
               ) : (
-                orders.map((order: any) => (
+                filteredOrders.map((order: any) => (
                   <tr
                     key={order._id}
                     className="border-b hover:bg-gray-50"
