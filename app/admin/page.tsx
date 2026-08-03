@@ -19,12 +19,13 @@ export default function AdminPage() {
   });
 
   const [loading, setLoading] = useState(true);
+  const [range, setRange] = useState("all");
 
   async function loadDashboard() {
     try {
-      const res = await fetch("/api/dashboard", {
-        cache: "no-store",
-      });
+     const res = await fetch(`/api/dashboard?range=${range}`, {
+  cache: "no-store",
+});
 
       const data = await res.json();
 
@@ -49,10 +50,9 @@ export default function AdminPage() {
     }
   }
 
-  useEffect(() => {
-    loadDashboard();
-  }, []);
-
+ useEffect(() => {
+  loadDashboard();
+}, [range]);
   if (loading) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -70,7 +70,27 @@ export default function AdminPage() {
         <h1 className="text-5xl font-extrabold mb-10">
           Admin Dashboard
         </h1>
-
+<div className="flex flex-wrap gap-3 mb-8">
+  {[
+    { label: "Today", value: "today" },
+    { label: "This Week", value: "week" },
+    { label: "This Month", value: "month" },
+    { label: "This Year", value: "year" },
+    { label: "All Time", value: "all" },
+  ].map((item) => (
+    <button
+      key={item.value}
+      onClick={() => setRange(item.value)}
+      className={`px-5 py-2 rounded-full font-semibold transition ${
+        range === item.value
+          ? "bg-yellow-500 text-black"
+          : "bg-white border hover:bg-yellow-100"
+      }`}
+    >
+      {item.label}
+    </button>
+  ))}
+</div>
         {/* Dashboard Cards */}
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

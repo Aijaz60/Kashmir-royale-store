@@ -1,32 +1,85 @@
 import { NextResponse } from "next/server";
 import clientPromise from "../../lib/mongodb";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const client = await clientPromise;
     const db = client.db("kashmir-shawls");
+    const { searchParams } = new URL(request.url);
+const range = searchParams.get("range") || "all";
+
+const now = new Date();
+let startDate = new Date(0);
+
+switch (range) {
+  case "today":
+    startDate = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate()
+    );
+    break;
+
+  case "week":
+    startDate = new Date(now);
+    startDate.setDate(now.getDate() - 7);
+    break;
+
+  case "month":
+    startDate = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      1
+    );
+    break;
+
+  case "year":
+    startDate = new Date(
+      now.getFullYear(),
+      0,
+      1
+    );
+    break;
+}
+
+const dateFilter =
+  range === "all"
+    ? {}
+    : {
+        createdAt: {
+          $gte: startDate,
+        },
+      };
 
     const productsCollection = db.collection("products");
     const ordersCollection = db.collection("orders");
 
     // Counts
     const totalProducts = await productsCollection.countDocuments();
-    const totalOrders = await ordersCollection.countDocuments();
+    const totalOrders = await ordersCollection.countDocuments(
+  dateFilter
+);
 
-    const pendingOrders = await ordersCollection.countDocuments({
-      status: "Pending",
-    });
+   const pendingOrders = await ordersCollection.countDocuments({
+  ...dateFilter,
+  status: "Pending",
+});
 
     const shippedOrders = await ordersCollection.countDocuments({
-      status: "Shipped",
-    });
+  ...dateFilter,
+  status: "Shipped",
+});
 
     const deliveredOrders = await ordersCollection.countDocuments({
-      status: "Delivered",
-    });
+  ...dateFilter,
+  status: "Delivered",
+});
 // Monthly Revenue
 const monthlyRevenue = await ordersCollection
   .aggregate([
+    {
+  $match: dateFilter,
+},
     {
       $group: {
         _id: {
@@ -65,7 +118,7 @@ const monthlyRevenue = await ordersCollection
 
     // Recent Orders
     const recentOrders = await ordersCollection
-      .find({})
+      .find(dateFilter)
       .sort({ createdAt: -1 })
       .limit(5)
       .toArray();
