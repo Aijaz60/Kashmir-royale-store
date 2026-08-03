@@ -9,9 +9,11 @@ export async function POST(req: Request) {
     const db = client.db("kashmir-shawls");
 
     const result = await db.collection("products").insertOne({
-      ...product,
-      createdAt: new Date(),
-    });
+  ...product,
+  stock: Number(product.stock || 0),
+  sold: 0,
+  createdAt: new Date(),
+});
 
     return NextResponse.json({
       success: true,

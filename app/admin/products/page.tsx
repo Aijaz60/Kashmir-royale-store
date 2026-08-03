@@ -13,6 +13,7 @@ type Product = {
   discount: string;
   rating: string;
   image: string;
+  stock: number;
 };
 
 export default function AdminProductsPage() {
@@ -32,6 +33,43 @@ const deleteProduct = async (id: string) => {
     );
   } else {
     alert("❌ Failed to delete product");
+  }
+};
+const restockProduct = async (
+  id: string,
+  quantity: number
+) => {
+  try {
+    const res = await fetch(`/api/restock-product/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        quantity,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      alert(`✅ Stock increased by ${quantity}`);
+
+      setProducts((prev) =>
+        prev.map((product) =>
+          product._id === id
+            ? {
+                ...product,
+                stock: product.stock + quantity,
+              }
+            : product
+        )
+      );
+    } else {
+      alert("Failed to restock");
+    }
+  } catch (error) {
+    console.error(error);
   }
 };
   const [products, setProducts] = useState<Product[]>([]);
@@ -97,6 +135,7 @@ const filteredProducts = products.filter((product) =>
                 <th className="p-4 text-left">Price</th>
                 <th className="p-4 text-left">Discount</th>
                 <th className="p-4 text-left">Rating</th>
+                <th className="p-4 text-left">Stock</th>
                 <th className="p-4 text-center">Actions</th>
               </tr>
             </thead>
@@ -159,9 +198,46 @@ const filteredProducts = products.filter((product) =>
         <td className="p-4">
           ⭐ {product.rating}
         </td>
+        <td className="p-4">
+  {product.stock <= 0 ? (
+    <span className="rounded-full bg-red-100 px-3 py-1 text-sm font-semibold text-red-700">
+      🔴 Out of Stock
+    </span>
+  ) : product.stock <= 5 ? (
+    <span className="rounded-full bg-yellow-100 px-3 py-1 text-sm font-semibold text-yellow-700">
+      🟡 Low Stock ({product.stock})
+    </span>
+  ) : (
+    <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-700">
+      🟢 In Stock ({product.stock})
+    </span>
+  )}
+</td>
 
         <td className="p-4">
           <div className="flex justify-center gap-3">
+            <button
+  type="button"
+  onClick={() => restockProduct(product._id, 10)}
+  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+>
+  +10
+</button>
+<button
+  type="button"
+  onClick={() => restockProduct(product._id, 25)}
+  className="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700"
+>
+  +25
+</button>
+
+<button
+  type="button"
+  onClick={() => restockProduct(product._id, 50)}
+  className="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700"
+>
+  +50
+</button>
 
             <Link href={`/admin/products/edit/${product._id}`}>
               <button

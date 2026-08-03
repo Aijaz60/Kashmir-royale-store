@@ -11,6 +11,7 @@ export default function AddProductPage() {
   const [rating, setRating] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("Shawls");
+  const [stock, setStock] = useState("");
 
   const [image, setImage] = useState("");
 const [preview, setPreview] = useState("");
@@ -73,6 +74,7 @@ const [uploading, setUploading] = useState(false);
   description,
   category,
   image,
+  stock: Number(stock),
 }),
     });
 
@@ -92,6 +94,7 @@ const [uploading, setUploading] = useState(false);
     setDescription("");
     setCategory("Shawls");
     setImage("");
+    setStock("");
   };
 
   return (
@@ -156,6 +159,13 @@ const [uploading, setUploading] = useState(false);
   value={category}
   onChange={(e) => setCategory(e.target.value)}
 >
+  <input
+  type="number"
+  placeholder="Stock Quantity"
+  className="w-full border p-3 rounded-lg"
+  value={stock}
+  onChange={(e) => setStock(e.target.value)}
+/>
   <option value="Shawls">Shawls</option>
   <option value="Pashmina">Pashmina</option>
   <option value="Suits">Suits</option>

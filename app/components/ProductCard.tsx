@@ -12,7 +12,9 @@ type ProductCardProps = {
   oldPrice: string;
   discount: string;
   rating: string;
+   stock: number;
   onAddToCart: () => void;
+ 
 };
 
 export default function ProductCard({
@@ -24,7 +26,9 @@ export default function ProductCard({
   oldPrice,
   discount,
   rating,
-  onAddToCart,
+stock,
+onAddToCart,
+  
 }: ProductCardProps) {
   return (
     <div className="group overflow-hidden rounded-2xl border bg-white shadow-lg transition duration-500 hover:shadow-2xl">
@@ -63,12 +67,32 @@ export default function ProductCard({
             {discount}
           </span>
         </div>
+        <div className="mt-3">
+  {stock <= 0 ? (
+    <p className="font-semibold text-red-600">
+      ❌ Out of Stock
+    </p>
+  ) : stock <= 5 ? (
+    <p className="font-semibold text-orange-500">
+      ⚠️ Only {stock} left
+    </p>
+  ) : (
+    <p className="font-semibold text-green-600">
+      📦 In Stock ({stock})
+    </p>
+  )}
+</div>
 
         <div className="mt-6 space-y-3">
           <button
             onClick={onAddToCart}
-            className="w-full rounded-lg bg-yellow-500 py-3 font-bold text-black transition hover:bg-yellow-400"
-          >
+            disabled={stock <= 0}
+            className={`w-full rounded-lg py-3 font-bold transition ${
+  stock <= 0
+    ? "bg-gray-400 cursor-not-allowed text-white"
+    : "bg-yellow-500 hover:bg-yellow-400 text-black"
+}`}
+           >
             🛒 Add to Cart
           </button>
 

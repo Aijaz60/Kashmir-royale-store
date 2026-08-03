@@ -16,6 +16,7 @@ export default function EditProductPage() {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("Shawls");
   const [image, setImage] = useState("");
+  const [stock, setStock] = useState("");
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
@@ -34,6 +35,7 @@ export default function EditProductPage() {
         setDescription(product.description);
         setCategory(product.category || "Shawls");
         setImage(product.image);
+        setStock((product.stock ?? 0).toString());
       });
   }, [id]);  
   const uploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -76,6 +78,7 @@ export default function EditProductPage() {
         description,
         category,
         image,
+        stock: Number(stock),
       }),
     });
 
@@ -153,16 +156,17 @@ export default function EditProductPage() {
   <option value="Suits">Suits</option>
   <option value="Stoles">Stoles</option>
 </select>
-<select
+
+<input
+  type="number"
   className="w-full border p-3 rounded-lg"
-  value={category}
-  onChange={(e) => setCategory(e.target.value)}
->
-  <option value="Shawls">Shawls</option>
-  <option value="Pashmina">Pashmina</option>
-  <option value="Suits">Suits</option>
-  <option value="Stoles">Stoles</option>
-</select>
+  placeholder="Stock Quantity"
+  value={stock}
+  onChange={(e) => setStock(e.target.value)}
+/>
+
+
+
           <div className="space-y-3">
   <input
     type="file"

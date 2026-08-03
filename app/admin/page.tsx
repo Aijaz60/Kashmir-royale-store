@@ -12,6 +12,7 @@ export default function AdminPage() {
     pendingOrders: 0,
     shippedOrders: 0,
     deliveredOrders: 0,
+    lowStockProducts: 0,
     recentOrders: [] as any[],
     recentProducts: [] as any[],
     monthlyRevenue: [] as any[],
@@ -37,6 +38,7 @@ export default function AdminPage() {
           pendingOrders: data.pendingOrders,
           shippedOrders: data.shippedOrders,
           deliveredOrders: data.deliveredOrders,
+          lowStockProducts: data.lowStockProducts,
           recentOrders: data.recentOrders || [],
           recentProducts: data.recentProducts || [],
           monthlyRevenue: data.monthlyRevenue || [],
@@ -153,6 +155,19 @@ export default function AdminPage() {
             <h2 className="text-4xl font-bold text-green-700 mt-3">
               {stats.deliveredOrders}
             </h2>
+            <div className="bg-white border border-red-200 rounded-2xl shadow-md hover:shadow-xl transition p-6">
+  <p className="text-gray-500 text-sm uppercase">
+    ⚠️ Low Stock
+  </p>
+
+  <h2 className="text-4xl font-bold text-red-600 mt-3">
+    {stats.lowStockProducts}
+  </h2>
+
+  <p className="text-sm text-gray-500 mt-2">
+    Products need restocking
+  </p>
+</div>
           </div>
 
         </div>

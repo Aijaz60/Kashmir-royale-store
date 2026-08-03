@@ -8,7 +8,7 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const body = await req.json();
+    const { quantity } = await req.json();
 
     const client = await clientPromise;
     const db = client.db("kashmir-shawls");
@@ -18,17 +18,9 @@ export async function PUT(
         _id: new ObjectId(id),
       },
       {
-        $set: {
-  title: body.title,
-  description: body.description,
-  price: Number(body.price),
-  oldPrice: Number(body.oldPrice),
-  discount: body.discount,
-  rating: body.rating,
-  category: body.category,
-  image: body.image,
-  stock: Number(body.stock),
-},
+        $inc: {
+          stock: Number(quantity),
+        },
       }
     );
 
@@ -42,7 +34,7 @@ export async function PUT(
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to update product",
+        error: "Failed to restock product",
       },
       {
         status: 500,

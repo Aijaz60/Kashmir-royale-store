@@ -14,6 +14,7 @@ type Product = {
   rating: string;
   image: string;
   category: string;
+  stock: number;
 };
 
 export default function Collections() {
@@ -100,6 +101,7 @@ export default function Collections() {
                 oldPrice={`₹${product.oldPrice.toLocaleString()}`}
                 discount={product.discount}
                 rating={product.rating}
+                stock={product.stock ?? 0}
                 onAddToCart={() =>
                   addToCart({
                     id: product._id,

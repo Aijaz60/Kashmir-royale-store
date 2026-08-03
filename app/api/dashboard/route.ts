@@ -74,6 +74,9 @@ const dateFilter =
   ...dateFilter,
   status: "Delivered",
 });
+const lowStockProducts = await productsCollection.countDocuments({
+  stock: { $lte: 5 },
+});
 // Monthly Revenue
 const monthlyRevenue = await ordersCollection
   .aggregate([
@@ -165,6 +168,7 @@ const topSellingProducts = await ordersCollection
       pendingOrders,
       shippedOrders,
       deliveredOrders,
+      lowStockProducts,
       recentOrders,
       recentProducts,
       monthlyRevenue,
