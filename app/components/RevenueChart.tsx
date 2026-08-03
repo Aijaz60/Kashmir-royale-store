@@ -80,14 +80,33 @@ export default function RevenueChart({ data }: Props) {
   };
 
   const options = {
-    responsive: true,
+  responsive: true,
+  maintainAspectRatio: false,
 
-    plugins: {
-      legend: {
-        position: "top" as const,
+  plugins: {
+    legend: {
+      display: false,
+    },
+    tooltip: {
+      callbacks: {
+        label: function (context: any) {
+          return `₹${context.parsed.y.toLocaleString()}`;
+        },
       },
     },
-  };
+  },
+
+  scales: {
+    y: {
+      beginAtZero: true,
+      ticks: {
+        callback: function (value: any) {
+          return "₹" + value.toLocaleString();
+        },
+      },
+    },
+  },
+};
 
   return (
     <div className="bg-white rounded-2xl shadow-md p-6 mt-10">
@@ -95,10 +114,12 @@ export default function RevenueChart({ data }: Props) {
         📈 Revenue Overview
       </h2>
 
-      <Line
-        data={chartData}
-        options={options}
-      />
+     <div className="h-80">
+  <Line
+    data={chartData}
+    options={options}
+  />
+</div>
     </div>
   );
 }
