@@ -1,110 +1,240 @@
 "use client";
+
 import Image from "next/image";
 import Link from "next/link";
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import { CartContext } from "../context/CartContext";
-import { FaShoppingCart, FaHeart, FaUser } from "react-icons/fa";
+import {
+  FaBars,
+  FaHeart,
+  FaShoppingCart,
+  FaTimes,
+  FaUser,
+} from "react-icons/fa";
+
+interface WebsiteSettings {
+  websiteName: string;
+  tagline: string;
+  logo: string;
+
+  phone: string;
+  phone2: string;
+  whatsapp: string;
+
+  announcementEnabled: boolean;
+  announcementText: string;
+
+  freeShippingAbove: string;
+}
+
+const defaultSettings: WebsiteSettings = {
+  websiteName: "Kashmir Royale",
+  tagline: "Authentic Kashmiri Shawls Since 1995",
+  logo: "/logo.png",
+
+  phone: "+91 7298129017",
+  phone2: "+91 7006819881",
+  whatsapp: "+91 7006819881",
+
+  announcementEnabled: true,
+  announcementText:
+    "🚚 FREE SHIPPING ABOVE ₹5000 • 🌍 WORLDWIDE SHIPPING",
+
+  freeShippingAbove: "5000",
+};
 
 export default function Navbar() {
-  const { cart } = useContext(CartContext);
+  const { cart, wishlist } = useContext(CartContext);
+
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const [settings, setSettings] =
+    useState<WebsiteSettings>(defaultSettings);
 
   const cartCount = cart.reduce(
     (total: number, item: any) => total + item.quantity,
     0
   );
+  const wishlistCount = wishlist.length;
 
- return (
-  <nav className="fixed top-0 left-0 w-full z-50 bg-black text-white shadow-lg">
-      <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+  useEffect(() => {
+    loadSettings();
+  }, []);
 
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-4">
+  async function loadSettings() {
+    try {
+      const res = await fetch("/api/settings");
+      const data = await res.json();
 
-          <Image
-            src="/logo.png"
-            alt="Kashmir Royale Shawls"
-            width={70}
-            height={70}
-            priority
-            className="w-16 h-16 object-contain"
-            unoptimized
-          />
+      if (data.success) {
+        setSettings({
+          ...defaultSettings,
+          ...data.settings,
+        });
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
 
-          <div>
-            <h1 className="text-2xl font-bold text-white">
-              Kashmir Royale Shawls
-            </h1>
+  const menuItems = [
+    {
+      title: "Home",
+      href: "/",
+    },
+    {
+      title: "Collections",
+      href: "/#collections",
+    },
+    {
+      title: "Contact",
+      href: "/contact",
+    },
+  ];
+    return (
+    <>
+      {settings.announcementEnabled && (
+        <div className="fixed top-0 left-0 z-[60] w-full bg-gradient-to-r from-yellow-500 via-amber-500 to-yellow-500 py-2 text-center text-xs font-semibold text-black md:text-sm">
+          <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-3 px-4">
+            <span>{settings.announcementText}</span>
 
-            <p className="text-sm text-gray-300">
-              Authentic Kashmiri Shawls
-            </p>
+            <span className="hidden md:inline">•</span>
 
-            <p className="text-xs text-yellow-400 uppercase tracking-[0.2em]">
-              Since 1995
-            </p>
+            <span>📞 {settings.phone}</span>
+
+            <span className="hidden md:inline">•</span>
+
+            <span>📞 {settings.phone2}</span>
+          </div>
+        </div>
+      )}
+
+      <nav
+        className={`fixed left-0 z-50 w-full border-b border-yellow-500/20 bg-black/90 text-white shadow-xl backdrop-blur-lg ${
+          settings.announcementEnabled ? "top-10" : "top-0"
+        }`}
+      >
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-4">
+            <Image
+              src={settings.logo || "/logo.png"}
+              alt={settings.websiteName}
+              width={70}
+              height={70}
+              priority
+              className="h-16 w-16 object-contain"
+            />
+
+            <div>
+              <h1 className="text-2xl font-bold">
+                {settings.websiteName}
+              </h1>
+
+              <p className="text-sm text-gray-300">
+                {settings.tagline}
+              </p>
+            </div>
+          </Link>
+
+          {/* Desktop Menu */}
+          <div className="hidden items-center gap-8 lg:flex">
+            {menuItems.map((item) => (
+              <Link
+                key={item.title}
+                href={item.href}
+                className="transition hover:text-yellow-400"
+              >
+                {item.title}
+              </Link>
+            ))}
           </div>
 
-        </Link>
+          {/* Desktop Right */}
+          <div className="hidden items-center gap-5 lg:flex">
+           <Link href="/wishlist" className="relative">
+  <FaHeart className="text-xl transition hover:text-red-500" />
 
-        {/* Menu */}
-        <div className="hidden md:flex gap-8 font-medium">
+  {wishlistCount > 0 && (
+    <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">
+      {wishlistCount}
+    </span>
+  )}
+</Link>
 
-          <Link href="/" className="hover:text-yellow-400 transition">
-            Home
-          </Link>
-
-          <Link href="/#collections" className="hover:text-yellow-400 transition">
-            Suits
-          </Link>
-
-          <Link href="/#collections" className="hover:text-yellow-400 transition">
-            Shawls
-          </Link>
-
-          <Link href="/#collections" className="hover:text-yellow-400 transition">
-            Pashmina
-          </Link>
-
-          <Link href="/contact" className="hover:text-yellow-400 transition">
-            Contact
-          </Link>
-
-        </div>
-
-        {/* Right Side */}
-        <div className="flex items-center gap-5">
-
-          <button>
-            <FaHeart className="text-xl hover:text-red-500 transition" />
-          </button>
-
-          <button>
-            <FaUser className="text-xl hover:text-yellow-400 transition" />
-          </button>
-
-          <Link href="/cart" className="relative">
-
-            <FaShoppingCart className="text-2xl hover:text-yellow-400 transition" />
-
-            {cartCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold">
-                {cartCount}
-              </span>
-            )}
-
-          </Link>
-
-          <Link href="/#collections">
-
-            <button className="bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-yellow-500 text-black px-6 py-3 rounded-xl font-bold shadow-lg transition-all duration-300 hover:scale-105">
-              Shop Now
+            <button>
+              <FaUser className="text-xl transition hover:text-yellow-400" />
             </button>
+<Link
+  href="/wishlist"
+  onClick={() => setMobileMenuOpen(false)}
+  className="mt-5 flex items-center gap-3 rounded-xl border border-red-500/30 p-4"
+>
+  <FaHeart />
+  Wishlist ({wishlistCount})
+</Link>
+            <Link href="/cart" className="relative">
+              <FaShoppingCart className="text-2xl transition hover:text-yellow-400" />
 
-          </Link>
+              {cartCount > 0 && (
+                <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
 
+            <Link href="/#collections">
+              <button className="rounded-xl bg-gradient-to-r from-yellow-500 to-amber-600 px-6 py-3 font-bold text-black transition hover:scale-105">
+                Shop Now
+              </button>
+            </Link>
+          </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="text-2xl lg:hidden"
+          >
+            {mobileMenuOpen ? <FaTimes /> : <FaBars />}
+          </button>
         </div>
 
-      </div>
-   </nav>
-);
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="border-t border-yellow-500/20 bg-black/95 lg:hidden">
+            <div className="flex flex-col px-6 py-5">
+              {menuItems.map((item) => (
+                <Link
+                  key={item.title}
+                  href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="border-b border-gray-800 py-4 text-lg hover:text-yellow-400"
+                >
+                  {item.title}
+                </Link>
+              ))}
+
+              <Link
+                href="/cart"
+                onClick={() => setMobileMenuOpen(false)}
+                className="mt-5 flex items-center gap-3 rounded-xl border border-yellow-500/30 p-4"
+              >
+                <FaShoppingCart />
+                Cart ({cartCount})
+              </Link>
+
+              <Link
+                href="/#collections"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <button className="mt-5 w-full rounded-xl bg-gradient-to-r from-yellow-500 to-amber-600 py-4 font-bold text-black">
+                  Shop Now
+                </button>
+              </Link>
+            </div>
+          </div>
+        )}
+      </nav>
+    </>
+  );
 }

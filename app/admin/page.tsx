@@ -6,9 +6,13 @@ import { useEffect, useState } from "react";
 
 export default function AdminPage() {
   const [stats, setStats] = useState({
+
     totalProducts: 0,
     totalOrders: 0,
     totalRevenue: 0,
+    totalCustomers: 0,
+todayRevenue: 0,
+averageOrderValue: 0,
     pendingOrders: 0,
     shippedOrders: 0,
     deliveredOrders: 0,
@@ -35,6 +39,9 @@ export default function AdminPage() {
           totalProducts: data.totalProducts,
           totalOrders: data.totalOrders,
           totalRevenue: data.totalRevenue,
+          totalCustomers: data.totalCustomers,
+          todayRevenue: data.todayRevenue,
+          averageOrderValue: data.averageOrderValue, 
           pendingOrders: data.pendingOrders,
           shippedOrders: data.shippedOrders,
           deliveredOrders: data.deliveredOrders,
@@ -126,6 +133,33 @@ export default function AdminPage() {
               ₹{stats.totalRevenue.toLocaleString()}
             </h2>
           </div>
+          <div className="bg-white border border-gray-100 rounded-2xl shadow-md hover:shadow-xl transition p-6">
+  <p className="text-gray-500 text-sm uppercase">
+    👥 Customers
+  </p>
+
+  <h2 className="text-4xl font-bold text-blue-600 mt-3">
+    {stats.totalCustomers}
+  </h2>
+</div>
+<div className="bg-white border border-gray-100 rounded-2xl shadow-md hover:shadow-xl transition p-6">
+  <p className="text-gray-500 text-sm uppercase">
+    💰 Today Revenue
+  </p>
+
+  <h2 className="text-4xl font-bold text-green-600 mt-3">
+    ₹{stats.todayRevenue.toLocaleString()}
+  </h2>
+</div>
+<div className="bg-white border border-gray-100 rounded-2xl shadow-md hover:shadow-xl transition p-6">
+  <p className="text-gray-500 text-sm uppercase">
+    💳 Average Order
+  </p>
+
+  <h2 className="text-4xl font-bold text-purple-600 mt-3">
+    ₹{stats.averageOrderValue.toLocaleString()}
+  </h2>
+</div>
 
           <div className="bg-white border border-gray-100 rounded-2xl shadow-md hover:shadow-xl transition p-6">
             <p className="text-gray-500 text-sm uppercase">
@@ -155,6 +189,8 @@ export default function AdminPage() {
             <h2 className="text-4xl font-bold text-green-700 mt-3">
               {stats.deliveredOrders}
             </h2>
+            </div>
+
             <div className="bg-white border border-red-200 rounded-2xl shadow-md hover:shadow-xl transition p-6">
   <p className="text-gray-500 text-sm uppercase">
     ⚠️ Low Stock
@@ -167,7 +203,7 @@ export default function AdminPage() {
   <p className="text-sm text-gray-500 mt-2">
     Products need restocking
   </p>
-</div>
+
           </div>
 
         </div>
@@ -259,17 +295,19 @@ export default function AdminPage() {
                       <td className="p-4">
 
                         <span
-                          className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                            order.status === "Delivered"
-                              ? "bg-green-100 text-green-700"
-                              : order.status === "Shipped"
-                              ? "bg-purple-100 text-purple-700"
-                              : order.status === "Confirmed"
-                              ? "bg-blue-100 text-blue-700"
-                              : "bg-yellow-100 text-yellow-700"
-                          }`}
+                         className={`px-3 py-1 rounded-full text-sm font-semibold ${
+  order.orderStatus === "Delivered"
+    ? "bg-green-100 text-green-700"
+    : order.orderStatus === "Shipped"
+    ? "bg-purple-100 text-purple-700"
+    : order.orderStatus === "Confirmed"
+    ? "bg-blue-100 text-blue-700"
+    : order.orderStatus === "Cancelled"
+    ? "bg-red-100 text-red-700"
+    : "bg-yellow-100 text-yellow-700"
+}`}
                         >
-                          {order.status}
+                          {order.orderStatus}
                         </span>
 
                       </td>

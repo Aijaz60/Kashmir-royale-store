@@ -30,7 +30,7 @@ interface Order {
 export async function generateInvoice(order: Order) {
   const pdfDoc = await PDFDocument.create();
 
-  const page = pdfDoc.addPage([595, 842]); // A4
+  const page = pdfDoc.addPage([595, 842]);
 
   const { width, height } = page.getSize();
 
@@ -45,12 +45,11 @@ export async function generateInvoice(order: Order) {
   const GOLD = rgb(0.83, 0.69, 0.21);
   const BLACK = rgb(0.1, 0.1, 0.1);
   const GRAY = rgb(0.45, 0.45, 0.45);
+  const LIGHT = rgb(0.96, 0.96, 0.96);
 
   let y = height - 60;
 
-  // ======================
-  // HEADER
-  // ======================
+  // Header Background
 
   page.drawRectangle({
     x: 0,
@@ -61,7 +60,7 @@ export async function generateInvoice(order: Order) {
   });
 
   page.drawText("KASHMIR ROYALE SHAWLS", {
-    x: 40,
+    x: 35,
     y: height - 35,
     size: 22,
     font: bold,
@@ -71,7 +70,7 @@ export async function generateInvoice(order: Order) {
   page.drawText(
     "Authentic Kashmiri Shawls • Since 1995",
     {
-      x: 40,
+      x: 35,
       y: height - 55,
       size: 11,
       font,
@@ -79,29 +78,275 @@ export async function generateInvoice(order: Order) {
     }
   );
 
-  y -= 40;
+  page.drawText("INVOICE", {
+    x: width - 120,
+    y: height - 38,
+    size: 20,
+    font: bold,
+    color: BLACK,
+  });
 
-  // ======================
+  y -= 45;
+  // ==========================
   // CUSTOMER DETAILS
-  // ======================
+  // ==========================
+
+  y -= 10;
 
   page.drawText("CUSTOMER DETAILS", {
-    x: 40,
+    x: 35,
     y,
     size: 14,
     font: bold,
     color: BLACK,
   });
 
+  y -= 20;
+
+  page.drawRectangle({
+    x: 35,
+    y: y - 55,
+    width: 240,
+    height: 65,
+    color: LIGHT,
+  });
+
+  page.drawText(`Name: ${order.customer?.name ?? "-"}`, {
+    x: 45,
+    y: y - 10,
+    size: 11,
+    font,
+    color: BLACK,
+  });
+
+  page.drawText(`Email: ${order.customer?.email ?? "-"}`, {
+    x: 45,
+    y: y - 25,
+    size: 11,
+    font,
+    color: BLACK,
+  });
+
+  page.drawText(`Phone: ${order.customer?.phone ?? "-"}`, {
+    x: 45,
+    y: y - 40,
+    size: 11,
+    font,
+    color: BLACK,
+  });
+
+  page.drawText(`Address: ${order.customer?.address ?? "-"}`, {
+    x: 45,
+    y: y - 55,
+    size: 10,
+    font,
+    color: GRAY,
+  });
+
+  // ==========================
+  // ORDER DETAILS
+  // ==========================
+
+  page.drawText("ORDER DETAILS", {
+    x: 320,
+    y,
+    size: 14,
+    font: bold,
+    color: BLACK,
+  });
+
+  page.drawRectangle({
+    x: 320,
+    y: y - 55,
+    width: 240,
+    height: 65,
+    color: LIGHT,
+  });
+
+  page.drawText(`Invoice : INV-${order.orderId ?? "-"}`, {
+    x: 330,
+    y: y - 10,
+    size: 11,
+    font,
+  });
+
+  page.drawText(`Order ID : ${order.orderId ?? "-"}`, {
+    x: 330,
+    y: y - 25,
+    size: 11,
+    font,
+  });
+
+  page.drawText(`Payment ID : ${order.paymentId ?? "-"}`, {
+    x: 330,
+    y: y - 40,
+    size: 10,
+    font,
+  });
+
+  page.drawText(`Status : ${order.status ?? "Pending"}`, {
+    x: 330,
+    y: y - 55,
+    size: 11,
+    font: bold,
+    color: BLACK,
+  });
+
+  y -= 95;
+  // ==========================
+  // ORDER ITEMS
+  // ==========================
+
+  page.drawText("ORDER ITEMS", {
+    x: 35,
+    y,
+    size: 14,
+    font: bold,
+    color: BLACK,
+  });
+
+  y -= 18;
+
+  // Table Header
+  page.drawRectangle({
+    x: 35,
+    y: y - 5,
+    width: 525,
+    height: 22,
+    color: GOLD,
+  });
+
+  page.drawText("Product", {
+    x: 45,
+    y,
+    size: 11,
+    font: bold,
+    color: BLACK,
+  });
+
+  page.drawText("Qty", {
+    x: 340,
+    y,
+    size: 11,
+    font: bold,
+    color: BLACK,
+  });
+
+  page.drawText("Price", {
+    x: 400,
+    y,
+    size: 11,
+    font: bold,
+    color: BLACK,
+  });
+
+  page.drawText("Total", {
+    x: 500,
+    y,
+    size: 11,
+    font: bold,
+    color: BLACK,
+  });
+
+  y -= 28;
+
+  let subtotal = 0;
+
+  for (const item of order.cart ?? []) {
+    const qty = item.quantity ?? 0;
+    const price = item.price ?? 0;
+    const total = qty * price;
+
+    subtotal += total;
+
+    page.drawRectangle({
+      x: 35,
+      y: y - 5,
+      width: 525,
+      height: 20,
+      color: LIGHT,
+    });
+
+    page.drawText(item.title ?? "-", {
+      x: 45,
+      y,
+      size: 10,
+      font,
+      color: BLACK,
+    });
+
+    page.drawText(String(qty), {
+      x: 345,
+      y,
+      size: 10,
+      font,
+      color: BLACK,
+    });
+
+    page.drawText(`Rs. ${price}`, {
+      x: 400,
+      y,
+      size: 10,
+      font,
+      color: BLACK,
+    });
+
+    page.drawText(`Rs. ${total}`, {
+      x: 500,
+      y,
+      size: 10,
+      font,
+      color: BLACK,
+    });
+
+    y -= 24;
+  }
+
+  y -= 10;
+  // ==========================
+  // TOTALS
+  // ==========================
+
+  page.drawLine({
+    start: { x: 35, y },
+    end: { x: 560, y },
+    thickness: 1,
+    color: GRAY,
+  });
+
   y -= 25;
 
+  page.drawText(`Subtotal : Rs. ${subtotal}`, {
+    x: 360,
+    y,
+    size: 11,
+    font,
+    color: BLACK,
+  });
+
+  y -= 18;
+
+  page.drawText(`Grand Total : Rs. ${order.total ?? 0}`, {
+    x: 360,
+    y,
+    size: 14,
+    font: bold,
+    color: GOLD,
+  });
+
+  y -= 40;
+
+  // ==========================
+  // THANK YOU
+  // ==========================
+
   page.drawText(
-    `Name: ${order.customer?.name ?? "-"}`,
+    "Thank you for shopping with Kashmir Royale!",
     {
-      x: 40,
+      x: 35,
       y,
-      size: 11,
-      font,
+      size: 16,
+      font: bold,
       color: BLACK,
     }
   );
@@ -109,323 +354,74 @@ export async function generateInvoice(order: Order) {
   y -= 18;
 
   page.drawText(
-    `Email: ${order.customer?.email ?? "-"}`,
+    "Every product is handcrafted with care and authenticity.",
     {
-      x: 40,
+      x: 35,
       y,
-      size: 11,
-      font,
-      color: BLACK,
-    }
-  );
-
-  y -= 18;
-
-  page.drawText(
-    `Phone: ${order.customer?.phone ?? "-"}`,
-    {
-      x: 40,
-      y,
-      size: 11,
-      font,
-      color: BLACK,
-    }
-  );
-
-  y -= 18;
-
-  page.drawText(
-    `Address: ${order.customer?.address ?? "-"}`,
-    {
-      x: 40,
-      y,
-      size: 11,
+      size: 10,
       font,
       color: GRAY,
-      maxWidth: 500,
     }
   );
 
   y -= 40;
 
-  // Continue in Part 2...
-  // ======================
-// ORDER DETAILS
-// ======================
+  // ==========================
+  // FOOTER
+  // ==========================
 
-page.drawText("ORDER DETAILS", {
-  x: 40,
-  y,
-  size: 14,
-  font: bold,
-  color: BLACK,
-});
-
-y -= 25;
-
-page.drawText(`Invoice : INV-${order.orderId ?? "-"}`, {
-  x: 40,
-  y,
-  size: 11,
-  font,
-  color: BLACK,
-});
-
-y -= 18;
-
-page.drawText(`Order ID : ${order.orderId ?? "-"}`, {
-  x: 40,
-  y,
-  size: 11,
-  font,
-  color: BLACK,
-});
-
-y -= 18;
-
-page.drawText(`Payment ID : ${order.paymentId ?? "-"}`, {
-  x: 40,
-  y,
-  size: 11,
-  font,
-  color: BLACK,
-});
-
-y -= 18;
-
-page.drawText(`Status : ${order.status ?? "Paid"}`, {
-  x: 40,
-  y,
-  size: 11,
-  font,
-  color: BLACK,
-});
-
-y -= 40;
-
-// ======================
-// PRODUCTS TABLE
-// ======================
-
-page.drawText("ORDER ITEMS", {
-  x: 40,
-  y,
-  size: 14,
-  font: bold,
-  color: BLACK,
-});
-
-y -= 20;
-
-// Header
-page.drawRectangle({
-  x: 40,
-  y: y - 5,
-  width: 515,
-  height: 20,
-  color: GOLD,
-});
-
-page.drawText("Product", {
-  x: 50,
-  y,
-  size: 11,
-  font: bold,
-});
-
-page.drawText("Qty", {
-  x: 330,
-  y,
-  size: 11,
-  font: bold,
-});
-
-page.drawText("Price", {
-  x: 390,
-  y,
-  size: 11,
-  font: bold,
-});
-
-page.drawText("Total", {
-  x: 500,
-  y,
-  size: 11,
-  font: bold,
-});
-
-y -= 30;
-
-let subtotal = 0;
-
-(order.cart ?? []).forEach((item) => {
-  const qty = item.quantity ?? 0;
-  const price = item.price ?? 0;
-  const total = qty * price;
-
-  subtotal += total;
-
-  page.drawText(item.title ?? "-", {
-    x: 50,
-    y,
-    size: 10,
-    font,
+  page.drawLine({
+    start: { x: 35, y },
+    end: { x: 560, y },
+    thickness: 1,
+    color: GOLD,
   });
 
-  page.drawText(String(qty), {
-    x: 335,
+  y -= 18;
+
+  page.drawText("KASHMIR ROYALE SHAWLS", {
+    x: 35,
     y,
-    size: 10,
-    font,
-  });
-
-  page.drawText(`₹${price}`, {
-    x: 390,
-    y,
-    size: 10,
-    font,
-  });
-
-  page.drawText(`₹${total}`, {
-    x: 500,
-    y,
-    size: 10,
-    font,
-  });
-
-  y -= 20;
-});
-
-y -= 20;
-
-page.drawLine({
-  start: { x: 40, y },
-  end: { x: 555, y },
-  thickness: 1,
-  color: GRAY,
-});
-
-y -= 25;
-
-page.drawText(`Subtotal : ₹${subtotal}`, {
-  x: 360,
-  y,
-  size: 11,
-  font,
-});
-
-y -= 18;
-
-page.drawText(`Grand Total : ₹${order.total ?? 0}`, {
-  x: 360,
-  y,
-  size: 13,
-  font: bold,
-  color: GOLD,
-});
-
-y -= 40;
-
-// Continue in Part 3...
-// ======================
-// THANK YOU
-// ======================
-
-page.drawText(
-  "Thank you for shopping with Kashmir Royale!",
-  {
-    x: 40,
-    y,
-    size: 18,
+    size: 12,
     font: bold,
     color: BLACK,
-  }
-);
+  });
 
-y -= 25;
+  y -= 16;
 
-page.drawText(
-  "Every Kashmir Royale product is handcrafted with care and authenticity.",
-  {
-    x: 40,
-    y,
-    size: 11,
-    font,
-    color: GRAY,
-    maxWidth: 500,
-  }
-);
-
-y -= 40;
-
-// ======================
-// FOOTER
-// ======================
-
-page.drawLine({
-  start: { x: 40, y },
-  end: { x: 555, y },
-  thickness: 1,
-  color: GOLD,
-});
-
-y -= 20;
-
-page.drawText(
-  "KASHMIR ROYALE SHAWLS",
-  {
-    x: 40,
-    y,
-    size: 13,
-    font: bold,
-    color: BLACK,
-  }
-);
-
-y -= 18;
-
-page.drawText(
-  "Srinagar, Jammu & Kashmir, India",
-  {
-    x: 40,
+  page.drawText("Srinagar, Jammu & Kashmir, India", {
+    x: 35,
     y,
     size: 10,
     font,
     color: GRAY,
-  }
-);
+  });
 
-y -= 15;
+  y -= 14;
 
-page.drawText(
-  "www.shopkashmirshawls.com",
-  {
-    x: 40,
+  page.drawText("www.shopkashmirshawls.com", {
+    x: 35,
     y,
     size: 10,
     font,
     color: GRAY,
-  }
-);
+  });
 
-y -= 15;
+  y -= 14;
 
-page.drawText(
-  "support@shopkashmirshawls.com",
-  {
-    x: 40,
+  page.drawText("support@shopkashmirshawls.com", {
+    x: 35,
     y,
     size: 10,
     font,
     color: GRAY,
-  }
-);
+  });
 
-// ======================
-// RETURN PDF BUFFER
-// ======================
+  // ==========================
+  // RETURN PDF BUFFER
+  // ==========================
 
-const pdfBytes = await pdfDoc.save();
+  const pdfBytes = await pdfDoc.save();
 
-return Buffer.from(pdfBytes);
+  return Buffer.from(pdfBytes);
 }

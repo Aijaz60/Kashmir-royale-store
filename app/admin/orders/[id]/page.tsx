@@ -69,16 +69,43 @@ console.log("ORDER:", order);
             </h2>
 
             <p><strong>Payment ID:</strong> {order.paymentId}</p>
-
+            <p className="mt-2">
+  <strong>Payment Method:</strong>{" "}
+  {order.paymentMethod || "Razorpay"}
+</p>
+<p className="mt-2">
+  <strong>Payment Status:</strong>{" "}
+  <span
+    className={`px-3 py-1 rounded-full text-sm font-semibold ${
+      order.paymentStatus === "Paid"
+        ? "bg-green-100 text-green-700"
+        : "bg-yellow-100 text-yellow-700"
+    }`}
+  >
+    {order.paymentStatus || "Paid"}
+  </span>
+</p>
             <p className="mt-2">
               <strong>Order ID:</strong> {order.orderId}
             </p>
 
             <p className="mt-2">
               <strong>Status:</strong>{" "}
-              <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full">
-                {order.status}
-              </span>
+             <span
+  className={`px-3 py-1 rounded-full text-sm font-semibold ${
+    order.orderStatus === "Pending"
+      ? "bg-yellow-100 text-yellow-700"
+      : order.orderStatus === "Confirmed"
+      ? "bg-blue-100 text-blue-700"
+      : order.orderStatus === "Shipped"
+      ? "bg-purple-100 text-purple-700"
+      : order.orderStatus === "Cancelled"
+      ? "bg-red-100 text-red-700"
+      : "bg-green-100 text-green-700"
+  }`}
+>
+  {order.orderStatus}
+</span>
             </p>
 
             <p className="mt-2">
@@ -88,10 +115,15 @@ console.log("ORDER:", order);
   : "-"}
             </p>
 
-            <h3 className="text-3xl font-bold text-green-600 mt-6">
-              ₹{order.total}
-            </h3>
+           <div className="mt-6 rounded-xl bg-green-50 p-5">
+  <p className="text-gray-500">
+    Grand Total
+  </p>
 
+  <h3 className="text-4xl font-bold text-green-600">
+    ₹{Number(order.total).toLocaleString()}
+  </h3>
+</div>
             <div className="mt-6">
   {/* <DownloadInvoice order={order as any} /> */}
 </div>

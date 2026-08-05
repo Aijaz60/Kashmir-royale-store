@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import clientPromise from "../../lib/mongodb";
-import { sendOrderEmail } from "../../lib/email";
-import { emailTemplate } from "../../lib/emailTemplate";
-import { generateInvoice } from "../../lib/invoice";
+import {
+  sendOrderEmail,
+  type EmailAttachment,
+} from "../../lib/email";
+import {
+  emailTemplate,
+  adminOrderTemplate,
+} from "../../lib/emailTemplate";
+
 
 export async function POST(req: Request) {
   try {
@@ -14,59 +20,48 @@ export async function POST(req: Request) {
     const client = await clientPromise;
     const db = client.db("kashmir-shawls");
 
-    const result = await db.collection("orders").insertOne({
-      ...order,
-      status: "Pending",
-      createdAt: new Date(),
-    });
-    if (order.customer?.email) {
-      const invoicePdf = await generateInvoice(order);
+   const result = await db.collection("orders").insertOne({
+  ...order,
 
-const attachments = [
-  {
-    filename: `Invoice-${order.orderId ?? "invoice"}.pdf`,
-    content: invoicePdf,
-  },
-];
+  paymentMethod: order.paymentMethod || "Razorpay",
+  paymentStatus: order.paymentStatus || "Paid",
+  orderStatus: order.orderStatus || "Pending",
+
+  createdAt: new Date(),
+  updatedAt: new Date(),
+});
+if (order.customer?.email) {
+ 
+
   await sendOrderEmail(
     order.customer.email,
     "🎉 Your Kashmir Royale Order is Confirmed",
-    `
-      <div style="font-family:Arial,sans-serif;padding:20px">
-        <h2>Thank you for shopping with Kashmir Royale ❤️</h2>
-
-        <p>Hello <b>${order.customer.name}</b>,</p>
-
-        <p>Your order has been received successfully.</p>
-
-        <hr/>
-
-        <p><b>Amount:</b> ₹${order.total}</p>
-
-        <p><b>Status:</b> Pending</p>
-
-        <p>We'll notify you when your order is shipped.</p>
-
-        <br/>
-
-        <p>Thank you,<br/>Kashmir Royale</p>
-      </div>
-    `
+    emailTemplate({
+      title: "Order Confirmed 🎉",
+      customerName: order.customer.name,
+      message:
+        "Thank you for your order. We have received it successfully and our team has started processing it.",
+      status: "Pending",
+      total: order.total,
+    }),
+  
   );
 }
-await sendOrderEmail(
-  order.customer.email,
-  "🎉 Your Kashmir Royale Order is Confirmed",
-  emailTemplate({
-    title: "Order Confirmed 🎉",
-    customerName: order.customer.name,
-    message:
-      "Thank you for your order. We have received it successfully and our team has started processing it.",
-    status: "Pending",
-    total: order.total,
-  }),
-  attachments
-);
+
+if (process.env.ADMIN_EMAIL) {
+  await sendOrderEmail(
+    process.env.ADMIN_EMAIL,
+    "🛒 New Order Received - Kashmir Royale",
+    adminOrderTemplate({
+      customerName: order.customer.name,
+      email: order.customer.email,
+      phone: order.customer.phone,
+      total: order.total,
+      paymentId: order.paymentId,
+      orderId: order.orderId,
+    })
+  );
+}
 
     // Update inventory
     for (const item of order.cart) {

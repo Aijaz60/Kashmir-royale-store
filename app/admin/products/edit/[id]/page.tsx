@@ -4,202 +4,417 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 
+interface Product {
+  title: string;
+  description: string;
+
+  price: number;
+  oldPrice: number;
+
+  discount: string;
+  rating: number;
+
+  category: string;
+
+  stock: number;
+
+  images: string[];
+
+  featured: boolean;
+  newArrival: boolean;
+  bestSeller: boolean;
+  active: boolean;
+}
+
 export default function EditProductPage() {
-  const { id } = useParams();
   const router = useRouter();
+  const params = useParams();
 
-  const [title, setTitle] = useState("");
-  const [price, setPrice] = useState("");
-  const [oldPrice, setOldPrice] = useState("");
-  const [discount, setDiscount] = useState("");
-  const [rating, setRating] = useState("");
-  const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("Shawls");
-  const [image, setImage] = useState("");
-  const [stock, setStock] = useState("");
-  const [uploading, setUploading] = useState(false);
+  const id = params.id as string;
 
-  useEffect(() => {
-    fetch("/api/products")
-      .then((res) => res.json())
-      .then((products) => {
-        const product = products.find((p: any) => p._id === id);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-        if (!product) return;
+  const [product, setProduct] = useState<Product>({
+    title: "",
+    description: "",
 
-        setTitle(product.title);
-        setPrice(product.price.toString());
-        setOldPrice(product.oldPrice.toString());
-        setDiscount(product.discount);
-        setRating(product.rating);
-        setDescription(product.description);
-        setCategory(product.category || "Shawls");
-        setImage(product.image);
-        setStock((product.stock ?? 0).toString());
-      });
-  }, [id]);  
-  const uploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0];
+    price: 0,
+    oldPrice: 0,
 
-  if (!file) return;
+    discount: "",
+    rating: 5,
 
-  setUploading(true);
+    category: "Shawls",
 
-  const formData = new FormData();
-  formData.append("file", file);
+    stock: 0,
 
-  const res = await fetch("/api/upload", {
-    method: "POST",
-    body: formData,
+    images: [],
+
+    featured: false,
+    newArrival: false,
+    bestSeller: false,
+    active: true,
   });
 
-  const data = await res.json();
+  useEffect(() => {
+    loadProduct();
+  }, []);
 
-  if (data.success) {
-    setImage(data.url);
+  async function loadProduct() {
+    try {
+      const res = await fetch(`/api/products/${id}`);
+
+      const data = await res.json();
+
+      setProduct({
+        title: data.title || "",
+        description: data.description || "",
+
+        price: Number(data.price || 0),
+        oldPrice: Number(data.oldPrice || 0),
+
+        discount: data.discount || "",
+        rating: Number(data.rating || 5),
+
+        category: data.category || "Shawls",
+
+        stock: Number(data.stock || 0),
+
+        images: data.images || [],
+
+        featured: data.featured || false,
+        newArrival: data.newArrival || false,
+        bestSeller: data.bestSeller || false,
+        active: data.active ?? true,
+      });
+    } catch (error) {
+      console.error(error);
+      alert("Failed to load product.");
+    } finally {
+      setLoading(false);
+    }
+  }
+    async function uploadImages(
+    e: React.ChangeEvent<HTMLInputElement>
+  ) {
+    const files = e.target.files;
+
+    if (!files?.length) return;
+
+    setSaving(true);
+
+    try {
+      const uploaded: string[] = [];
+
+      for (const file of Array.from(files)) {
+        const reader = new FileReader();
+
+        const image = await new Promise<string>((resolve) => {
+          reader.onloadend = () =>
+            resolve(reader.result as string);
+
+          reader.readAsDataURL(file);
+        });
+
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            image,
+          }),
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          uploaded.push(data.url);
+        }
+      }
+
+      setProduct((prev) => ({
+        ...prev,
+        images: [...prev.images, ...uploaded],
+      }));
+    } catch (error) {
+      console.error(error);
+      alert("Image upload failed.");
+    } finally {
+      setSaving(false);
+    }
   }
 
-  setUploading(false);
-};
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const res = await fetch(`/api/update-product/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        title,
-        price,
-        oldPrice,
-        discount,
-        rating,
-        description,
-        category,
-        image,
-        stock: Number(stock),
-      }),
-    });
-
-    const data = await res.json();
-
-    if (data.success) {
-      alert("✅ Product Updated Successfully");
-      router.push("/admin/products");
-    } else {
-      alert("❌ Failed to Update Product");
-    }
-  };
+  function removeImage(index: number) {
+    setProduct((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index),
+    }));
+  }
 
   return (
-    <main className="min-h-screen bg-gray-100 pt-32 px-8">
-      <div className="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow">
+    <main className="min-h-screen bg-gray-100 px-8 pt-32">
+      <div className="mx-auto max-w-5xl rounded-2xl bg-white p-8 shadow-xl">
 
-        <h1 className="text-4xl font-bold mb-8">
+        <h1 className="mb-8 text-4xl font-bold">
           Edit Product
         </h1>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        {loading ? (
+          <div className="py-20 text-center text-lg">
+            Loading...
+          </div>
+        ) : (
 
-          <input
-            className="w-full border p-3 rounded-lg"
-            placeholder="Product Name"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
+          <div className="space-y-6">
 
-          <input
-            className="w-full border p-3 rounded-lg"
-            type="number"
-            placeholder="Price"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-          />
+            <input
+              className="w-full rounded-xl border p-3"
+              placeholder="Product Name"
+              value={product.title}
+              onChange={(e) =>
+                setProduct({
+                  ...product,
+                  title: e.target.value,
+                })
+              }
+            />
 
-          <input
-            className="w-full border p-3 rounded-lg"
-            type="number"
-            placeholder="Old Price"
-            value={oldPrice}
-            onChange={(e) => setOldPrice(e.target.value)}
-          />
+            <div className="grid gap-5 md:grid-cols-2">
 
-          <input
-            className="w-full border p-3 rounded-lg"
-            placeholder="Discount"
-            value={discount}
-            onChange={(e) => setDiscount(e.target.value)}
-          />
+              <input
+                type="number"
+                className="rounded-xl border p-3"
+                placeholder="Price"
+                value={product.price}
+                onChange={(e) =>
+                  setProduct({
+                    ...product,
+                    price: Number(e.target.value),
+                  })
+                }
+              />
 
-          <input
-            className="w-full border p-3 rounded-lg"
-            placeholder="Rating"
-            value={rating}
-            onChange={(e) => setRating(e.target.value)}
-          />
+              <input
+                type="number"
+                className="rounded-xl border p-3"
+                placeholder="Old Price"
+                value={product.oldPrice}
+                onChange={(e) =>
+                  setProduct({
+                    ...product,
+                    oldPrice: Number(e.target.value),
+                  })
+                }
+              />
 
-          <textarea
-            className="w-full border p-3 rounded-lg"
-            rows={4}
-            placeholder="Description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-          <select
-  className="w-full border p-3 rounded-lg"
-  value={category}
-  onChange={(e) => setCategory(e.target.value)}
->
-  <option value="Shawls">Shawls</option>
-  <option value="Pashmina">Pashmina</option>
-  <option value="Suits">Suits</option>
-  <option value="Stoles">Stoles</option>
-</select>
+            </div>
 
-<input
-  type="number"
-  className="w-full border p-3 rounded-lg"
-  placeholder="Stock Quantity"
-  value={stock}
-  onChange={(e) => setStock(e.target.value)}
-/>
+            <textarea
+              rows={5}
+              className="w-full rounded-xl border p-3"
+              placeholder="Description"
+              value={product.description}
+              onChange={(e) =>
+                setProduct({
+                  ...product,
+                  description: e.target.value,
+                })
+              }
+            />
 
+            <input
+              type="file"
+              multiple
+              accept="image/*"
+              onChange={uploadImages}
+              className="w-full rounded-xl border p-3"
+            />
 
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              {product.images.map((image, index) => (
+                <div
+                  key={index}
+                  className="relative"
+                >
+                  <Image
+                    src={image}
+                    alt=""
+                    width={250}
+                    height={250}
+                    className="h-44 w-full rounded-xl object-cover"
+                  />
 
-          <div className="space-y-3">
-  <input
-    type="file"
-    accept="image/*"
-    onChange={uploadImage}
-    className="w-full border p-3 rounded-lg"
-  />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    className="absolute right-2 top-2 rounded-full bg-red-600 px-2 py-1 text-xs text-white"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+                        <div className="grid gap-5 md:grid-cols-2">
 
-  {uploading && (
-    <p className="text-blue-600">
-      Uploading image...
-    </p>
-  )}
+              <select
+                className="rounded-xl border p-3"
+                value={product.category}
+                onChange={(e) =>
+                  setProduct({
+                    ...product,
+                    category: e.target.value,
+                  })
+                }
+              >
+                <option value="Shawls">Shawls</option>
+                <option value="Pashmina">Pashmina</option>
+                <option value="Suits">Suits</option>
+                <option value="Stoles">Stoles</option>
+              </select>
 
-  {image && (
-    <Image
-      src={image}
-      alt="Preview"
-      width={250}
-      height={250}
-      className="rounded-lg border"
-    />
-  )}
-</div>
+              <input
+                type="number"
+                className="rounded-xl border p-3"
+                placeholder="Stock"
+                value={product.stock}
+                onChange={(e) =>
+                  setProduct({
+                    ...product,
+                    stock: Number(e.target.value),
+                  })
+                }
+              />
 
-          <button
-            type="submit"
-            className="w-full bg-yellow-500 hover:bg-yellow-400 py-3 rounded-xl font-bold"
-          >
-            Update Product
-          </button>
+              <input
+                type="number"
+                step="0.1"
+                className="rounded-xl border p-3"
+                placeholder="Rating"
+                value={product.rating}
+                onChange={(e) =>
+                  setProduct({
+                    ...product,
+                    rating: Number(e.target.value),
+                  })
+                }
+              />
 
-        </form>
+              <input
+                className="rounded-xl border p-3"
+                placeholder="Discount"
+                value={product.discount}
+                onChange={(e) =>
+                  setProduct({
+                    ...product,
+                    discount: e.target.value,
+                  })
+                }
+              />
+
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+
+              <label className="flex items-center gap-3 rounded-xl border p-4">
+                <input
+                  type="checkbox"
+                  checked={product.featured}
+                  onChange={(e) =>
+                    setProduct({
+                      ...product,
+                      featured: e.target.checked,
+                    })
+                  }
+                />
+                Featured Product
+              </label>
+
+              <label className="flex items-center gap-3 rounded-xl border p-4">
+                <input
+                  type="checkbox"
+                  checked={product.newArrival}
+                  onChange={(e) =>
+                    setProduct({
+                      ...product,
+                      newArrival: e.target.checked,
+                    })
+                  }
+                />
+                New Arrival
+              </label>
+
+              <label className="flex items-center gap-3 rounded-xl border p-4">
+                <input
+                  type="checkbox"
+                  checked={product.bestSeller}
+                  onChange={(e) =>
+                    setProduct({
+                      ...product,
+                      bestSeller: e.target.checked,
+                    })
+                  }
+                />
+                Best Seller
+              </label>
+
+              <label className="flex items-center gap-3 rounded-xl border p-4">
+                <input
+                  type="checkbox"
+                  checked={product.active}
+                  onChange={(e) =>
+                    setProduct({
+                      ...product,
+                      active: e.target.checked,
+                    })
+                  }
+                />
+                Active Product
+              </label>
+
+            </div>
+
+            <button
+              type="button"
+              disabled={saving}
+              onClick={async () => {
+                try {
+                  setSaving(true);
+
+                  const res = await fetch(
+                    `/api/update-product/${id}`,
+                    {
+                      method: "PUT",
+                      headers: {
+                        "Content-Type": "application/json",
+                      },
+                      body: JSON.stringify(product),
+                    }
+                  );
+
+                  const data = await res.json();
+
+                  if (data.success) {
+                    alert("✅ Product Updated Successfully");
+                    router.push("/admin/products");
+                  } else {
+                    alert("❌ Failed to update product");
+                  }
+                } catch (error) {
+                  console.error(error);
+                  alert("Something went wrong");
+                } finally {
+                  setSaving(false);
+                }
+              }}
+              className="w-full rounded-xl bg-yellow-500 py-4 text-lg font-bold text-black transition hover:bg-yellow-400 disabled:opacity-50"
+            >
+              {saving ? "Updating..." : "Update Product"}
+            </button>
+
+          </div>
+        )}
 
       </div>
     </main>

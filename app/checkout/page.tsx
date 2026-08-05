@@ -23,11 +23,17 @@ export default function CheckoutPage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+const [state, setState] = useState("");
+const [pincode, setPincode] = useState("");
+const [paymentMethod, setPaymentMethod] = useState("razorpay");
 
   const total = cart.reduce(
     (sum: number, item: any) => sum + item.price * item.quantity,
     0
   );
+  const shippingCharge = total >= 5000 ? 0 : 199;
+const grandTotal = total + shippingCharge;
 
   const getBase64Image = () =>
     new Promise<string>((resolve) => {
@@ -97,9 +103,12 @@ export default function CheckoutPage() {
     doc.text(`Email: ${email}`, 15, 87);
     doc.text(`Phone: ${phone}`, 15, 94);
     doc.text(`Address: ${address}`, 15, 101);
+    doc.text(`City: ${city}`, 15, 108);
+doc.text(`State: ${state}`, 15, 115);
+doc.text(`Pincode: ${pincode}`, 15, 122);
 
     autoTable(doc, {
-      startY: 112,
+      startY: 135,
       head: [["Product", "Qty", "Price", "Total"]],
       body: cart.map((item: any) => [
         item.title,
@@ -130,10 +139,69 @@ export default function CheckoutPage() {
     doc.save(`Invoice-${Date.now()}.pdf`);
   };
     const handlePayment = async () => {
-    if (!name || !email || !phone || !address) {
-      alert("Please fill in all customer details.");
-      return;
+   if (
+  !name ||
+  !email ||
+  !phone ||
+  !address ||
+  !city ||
+  !state ||
+  !pincode
+) {
+  alert("Please fill in all customer details.");
+  return;
+}
+if (paymentMethod === "cod") {
+  alert("Cash on Delivery order placed successfully.");
+
+  clearCart();
+  router.push("/success");
+
+  return;
+}
+
+if (paymentMethod === "cod") {
+  try {
+    const saveResponse = await fetch("/api/save-order", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        customer: {
+          name,
+          email,
+          phone,
+          address,
+          city,
+          state,
+          pincode,
+        },
+        cart,
+        total: grandTotal,
+        paymentMethod: "Cash on Delivery",
+        paymentStatus: "Pending",
+        orderStatus: "Pending",
+      }),
+    });
+
+    const saveResult = await saveResponse.json();
+
+    if (saveResponse.ok && saveResult.success) {
+      await generateInvoice();
+      clearCart();
+      router.push("/success");
+    } else {
+      alert("Failed to save COD order.");
     }
+  } catch (error) {
+    console.error(error);
+    alert("Something went wrong.");
+  }
+
+  return;
+}
+
 
     setLoading(true);
 
@@ -143,9 +211,9 @@ export default function CheckoutPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          amount: total,
-        }),
+       body: JSON.stringify({
+  amount: grandTotal,
+}),
       });
 
       const order = await response.json();
@@ -191,14 +259,17 @@ export default function CheckoutPage() {
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({
-                customer: {
-                  name,
-                  email,
-                  phone,
-                  address,
-                },
+               customer: {
+  name,
+  email,
+  phone,
+  address,
+  city,
+  state,
+  pincode,
+},
                 cart,
-                total,
+                total: grandTotal,
                 paymentId: response.razorpay_payment_id,
                 orderId: response.razorpay_order_id,
               }),
@@ -284,6 +355,62 @@ export default function CheckoutPage() {
               onChange={(e) => setAddress(e.target.value)}
               className="w-full border rounded-lg px-4 py-3"
             />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+  <input
+    type="text"
+    placeholder="City"
+    value={city}
+    onChange={(e) => setCity(e.target.value)}
+    className="w-full border rounded-lg px-4 py-3"
+  />
+
+  <input
+    type="text"
+    placeholder="State"
+    value={state}
+    onChange={(e) => setState(e.target.value)}
+    className="w-full border rounded-lg px-4 py-3"
+  />
+
+  <input
+    type="text"
+    placeholder="Pincode"
+    value={pincode}
+    onChange={(e) => setPincode(e.target.value)}
+    className="w-full border rounded-lg px-4 py-3"
+  />
+  <div className="rounded-xl border p-4">
+
+  <h3 className="mb-4 text-lg font-bold">
+    Payment Method
+  </h3>
+
+  <label className="mb-3 flex cursor-pointer items-center gap-3">
+    <input
+      type="radio"
+      name="payment"
+      value="razorpay"
+      checked={paymentMethod === "razorpay"}
+      onChange={(e) => setPaymentMethod(e.target.value)}
+    />
+    <span>💳 Razorpay (Online Payment)</span>
+  </label>
+
+  <label className="flex cursor-pointer items-center gap-3">
+    <input
+      type="radio"
+      name="payment"
+      value="cod"
+      checked={paymentMethod === "cod"}
+      onChange={(e) => setPaymentMethod(e.target.value)}
+    />
+    <span>💵 Cash on Delivery</span>
+  </label>
+
+</div>
+
+</div>
           </div>
         </div>
 
@@ -300,32 +427,69 @@ export default function CheckoutPage() {
           ) : (
             <>
               <div className="space-y-5">
-                {cart.map((item: any) => (
-                  <div
-                    key={item.id}
-                    className="flex justify-between border-b pb-4"
-                  >
-                    <div>
-                      <h3 className="font-semibold">
-                        {item.title}
-                      </h3>
+               {cart.map((item: any) => (
+  <div
+    key={item.id}
+    className="flex justify-between items-center border-b pb-4"
+  >
+    <div className="flex items-center gap-4">
 
-                      <p className="text-gray-500 text-sm">
-                        Qty: {item.quantity}
-                      </p>
-                    </div>
+      <img
+        src={item.image || "/images/placeholder.jpg"}
+        alt={item.title}
+        className="h-16 w-16 rounded-lg border object-cover"
+      />
 
-                    <p className="font-bold">
-                      ₹{item.price * item.quantity}
-                    </p>
-                  </div>
-                ))}
+      <div>
+        <h3 className="font-semibold">
+          {item.title}
+        </h3>
+
+        <p className="text-sm text-gray-500">
+          Qty: {item.quantity}
+        </p>
+
+        <p className="text-sm font-semibold text-yellow-600">
+          ₹{item.price}
+        </p>
+      </div>
+
+    </div>
+
+    <p className="font-bold">
+      ₹{item.price * item.quantity}
+    </p>
+  </div>
+))}
               </div>
 
-              <div className="flex justify-between text-2xl font-bold mt-8">
-                <span>Total</span>
-                <span>₹{total}</span>
-              </div>
+             <div className="mt-8 space-y-3 border-t pt-5">
+
+  <div className="flex justify-between">
+    <span>Subtotal</span>
+    <span>₹{total}</span>
+  </div>
+
+  <div className="flex justify-between">
+    <span>Shipping</span>
+
+    <span className="font-semibold">
+      {shippingCharge === 0 ? (
+        <span className="text-green-600">
+          FREE
+        </span>
+      ) : (
+        `₹${shippingCharge}`
+      )}
+    </span>
+  </div>
+
+  <div className="flex justify-between border-t pt-4 text-2xl font-bold">
+    <span>Grand Total</span>
+    <span>₹{grandTotal}</span>
+  </div>
+
+</div>
 
               <button
                 onClick={handlePayment}

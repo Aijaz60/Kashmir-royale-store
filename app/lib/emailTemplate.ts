@@ -172,3 +172,62 @@ Thank you for shopping with us ❤️
 </html>
 `;
 }
+export function adminOrderTemplate({
+  customerName,
+  email,
+  phone,
+  total,
+  paymentId,
+  orderId,
+}: {
+  customerName: string;
+  email: string;
+  phone: string;
+  total: number;
+  paymentId: string;
+  orderId: string;
+}) {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>New Order Received</title>
+</head>
+
+<body style="margin:0;padding:40px;background:#f5f5f5;font-family:Arial,sans-serif;">
+
+<div style="max-width:650px;margin:auto;background:#fff;border-radius:12px;padding:35px;">
+
+<h1 style="color:#D4AF37;margin-top:0;">
+🛒 New Order Received
+</h1>
+
+<p>A new customer has placed an order.</p>
+
+<hr>
+
+<p><b>Customer:</b> ${customerName}</p>
+
+<p><b>Email:</b> ${email}</p>
+
+<p><b>Phone:</b> ${phone}</p>
+
+<p><b>Total:</b> ₹${total}</p>
+
+<p><b>Payment ID:</b> ${paymentId}</p>
+
+<p><b>Order ID:</b> ${orderId}</p>
+
+<hr>
+
+<p>
+Please login to the Admin Panel to process this order.
+</p>
+
+</div>
+
+</body>
+</html>
+`;
+}

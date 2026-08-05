@@ -8,6 +8,7 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
+
     const body = await req.json();
 
     const client = await clientPromise;
@@ -19,16 +20,28 @@ export async function PUT(
       },
       {
         $set: {
-  title: body.title,
-  description: body.description,
-  price: Number(body.price),
-  oldPrice: Number(body.oldPrice),
-  discount: body.discount,
-  rating: body.rating,
-  category: body.category,
-  image: body.image,
-  stock: Number(body.stock),
-},
+          title: body.title,
+          description: body.description,
+
+          price: Number(body.price),
+          oldPrice: Number(body.oldPrice),
+
+          discount: body.discount,
+          rating: Number(body.rating),
+
+          category: body.category,
+
+          images: body.images || [],
+
+          stock: Number(body.stock),
+
+          featured: Boolean(body.featured),
+          newArrival: Boolean(body.newArrival),
+          bestSeller: Boolean(body.bestSeller),
+          active: Boolean(body.active),
+
+          updatedAt: new Date(),
+        },
       }
     );
 

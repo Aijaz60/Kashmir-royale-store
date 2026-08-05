@@ -11,10 +11,14 @@ type Product = {
   price: number;
   oldPrice: number;
   discount: string;
-  rating: string;
-  image: string;
+  rating: number;
+  images: string[];
   category: string;
   stock: number;
+  featured: boolean;
+  newArrival: boolean;
+  bestSeller: boolean;
+  active: boolean;
 };
 
 export default function Collections() {
@@ -94,20 +98,20 @@ export default function Collections() {
               <ProductCard
                 key={product._id}
                 id={product._id}
-                image={product.image}
+                image={product.images?.[0] || "/placeholder.png"}
                 title={product.title}
                 description={product.description}
                 price={`₹${product.price.toLocaleString()}`}
                 oldPrice={`₹${product.oldPrice.toLocaleString()}`}
                 discount={product.discount}
-                rating={product.rating}
+                rating={String(product.rating)}
                 stock={product.stock ?? 0}
                 onAddToCart={() =>
                   addToCart({
                     id: product._id,
                     title: product.title,
                     price: product.price,
-                    image: product.image,
+                    image: product.images?.[0] || "/placeholder.png",
                   })
                 }
               />

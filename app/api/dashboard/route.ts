@@ -115,9 +115,43 @@ const monthlyRevenue = await ordersCollection
         },
       ])
       .toArray();
+const totalRevenue =
+  revenueData.length > 0
+    ? revenueData[0].totalRevenue
+    : 0;
 
-    const totalRevenue =
-      revenueData.length > 0 ? revenueData[0].totalRevenue : 0;
+const averageOrderValue =
+  totalOrders > 0
+    ? Math.round(totalRevenue / totalOrders)
+    : 0;
+
+      const today = new Date();
+today.setHours(0, 0, 0, 0);
+
+const todayRevenueData = await ordersCollection
+  .aggregate([
+    {
+      $match: {
+        createdAt: {
+          $gte: today,
+        },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        revenue: {
+          $sum: "$total",
+        },
+      },
+    },
+  ])
+  .toArray();
+
+const todayRevenue =
+  todayRevenueData.length > 0
+    ? todayRevenueData[0].revenue
+    : 0;
 
     // Recent Orders
     const recentOrders = await ordersCollection
@@ -125,6 +159,14 @@ const monthlyRevenue = await ordersCollection
       .sort({ createdAt: -1 })
       .limit(5)
       .toArray();
+// Unique Customers
+const uniqueCustomers = await ordersCollection.distinct(
+  "customer.email",
+  dateFilter
+);
+
+const totalCustomers = uniqueCustomers.length;
+
 // Top Selling Products
 const topSellingProducts = await ordersCollection
   .aggregate([
@@ -165,6 +207,9 @@ const topSellingProducts = await ordersCollection
       totalProducts,
       totalOrders,
       totalRevenue,
+      totalCustomers,
+      todayRevenue,
+      averageOrderValue,
       pendingOrders,
       shippedOrders,
       deliveredOrders,
