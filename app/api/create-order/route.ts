@@ -4,6 +4,16 @@ import razorpay from "../../lib/razorpay";
 export async function POST(req: Request) {
   try {
     const { amount } = await req.json();
+    if (!Number.isFinite(Number(amount)) || Number(amount) <= 0) {
+  return NextResponse.json(
+    {
+      error: "Invalid amount",
+    },
+    {
+      status: 400,
+    }
+  );
+}
 
     const order = await razorpay.orders.create({
       amount: amount * 100,

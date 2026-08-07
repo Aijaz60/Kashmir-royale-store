@@ -14,6 +14,25 @@ import {
 export async function POST(req: Request) {
   try {
     const order = await req.json();
+    if (
+  !order.customer ||
+  !order.customer.name ||
+  !order.customer.email ||
+  !Array.isArray(order.cart) ||
+  order.cart.length === 0 ||
+  !Number.isFinite(Number(order.total)) ||
+  Number(order.total) <= 0
+) {
+  return NextResponse.json(
+    {
+      success: false,
+      error: "Invalid order data",
+    },
+    {
+      status: 400,
+    }
+  );
+}
 
     console.log("=================================");
     console.log("ORDER RECEIVED");
@@ -41,6 +60,9 @@ export async function POST(req: Request) {
 
     // Update Inventory
     for (const item of order.cart) {
+      if (!ObjectId.isValid(item.id)) {
+  continue;
+}
       await db.collection("products").updateOne(
         {
           _id: new ObjectId(item.id),

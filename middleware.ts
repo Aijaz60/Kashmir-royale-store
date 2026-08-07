@@ -9,6 +9,12 @@ export function middleware(request: NextRequest) {
   if (pathname === "/admin/login") {
     return NextResponse.next();
   }
+  // Redirect logged-in admin away from login page
+if (pathname === "/admin/login" && token === "logged-in") {
+  return NextResponse.redirect(
+    new URL("/admin/orders", request.url)
+  );
+}
 
   // Protect Admin Pages
   if (pathname.startsWith("/admin")) {
@@ -28,7 +34,10 @@ export function middleware(request: NextRequest) {
     pathname.startsWith("/api/products/add") ||
     pathname.startsWith("/api/products/edit") ||
     pathname.startsWith("/api/products/delete") ||
-    pathname.startsWith("/api/upload")
+    pathname.startsWith("/api/upload") ||
+pathname.startsWith("/api/update-product") ||
+pathname.startsWith("/api/delete-product") ||
+pathname.startsWith("/api/restock-product")
   ) {
     if (token !== "logged-in") {
       return NextResponse.json(
@@ -57,5 +66,8 @@ export const config = {
     "/api/products/edit/:path*",
     "/api/products/delete/:path*",
     "/api/upload/:path*",
+    "/api/update-product/:path*",
+"/api/delete-product/:path*",
+"/api/restock-product/:path*",
   ],
 };

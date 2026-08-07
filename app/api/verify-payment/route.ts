@@ -8,6 +8,21 @@ export async function POST(req: Request) {
       razorpay_payment_id,
       razorpay_signature,
     } = await req.json();
+    if (
+  !razorpay_order_id ||
+  !razorpay_payment_id ||
+  !razorpay_signature
+) {
+  return NextResponse.json(
+    {
+      success: false,
+      message: "Missing payment details",
+    },
+    {
+      status: 400,
+    }
+  );
+}
 
     const body = razorpay_order_id + "|" + razorpay_payment_id;
 
@@ -16,7 +31,12 @@ export async function POST(req: Request) {
       .update(body)
       .digest("hex");
 
-    if (expectedSignature === razorpay_signature) {
+    if (
+  crypto.timingSafeEqual(
+    Buffer.from(expectedSignature),
+    Buffer.from(razorpay_signature)
+  )
+) {
       return NextResponse.json({
         success: true,
       });
