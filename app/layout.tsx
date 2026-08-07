@@ -1,7 +1,10 @@
-import CartProvider from "./context/CartContext";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
+import { Toaster } from "react-hot-toast";
+
+import CartProvider from "./context/CartContext";
+import FloatingCart from "./components/FloatingCart";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -67,15 +70,15 @@ export const metadata: Metadata = {
   robots: {
     index: true,
     follow: true,
-    
   },
+
   themeColor: "#D4AF37",
 
-category: "Fashion",
+  category: "Fashion",
 
-icons: {
-  icon: "/favicon.ico",
-},
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
@@ -89,14 +92,29 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <CartProvider>
-          {children}
+       <CartProvider>
+  {children}
+
+  <FloatingCart />
+
+  <Toaster
+            position="bottom-center"
+            toastOptions={{
+              duration: 2000,
+              style: {
+                background: "#111827",
+                color: "#fff",
+                borderRadius: "12px",
+                padding: "12px 16px",
+              },
+            }}
+          />
         </CartProvider>
 
-       <Script
-  src="https://checkout.razorpay.com/v1/checkout.js"
-  strategy="afterInteractive"
-/>
+        <Script
+          src="https://checkout.razorpay.com/v1/checkout.js"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );

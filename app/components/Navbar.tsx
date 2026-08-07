@@ -50,16 +50,13 @@ export default function Navbar() {
 
   const [settings, setSettings] =
     useState<WebsiteSettings>(defaultSettings);
-
-  const cartCount = cart.reduce(
-    (total: number, item: any) => total + item.quantity,
-    0
-  );
+const cartCount = cart.reduce(
+  (total, item) => total + item.quantity,
+  0
+);
   const wishlistCount = wishlist.length;
 
-  useEffect(() => {
-    loadSettings();
-  }, []);
+ 
 
   async function loadSettings() {
     try {
@@ -76,6 +73,9 @@ export default function Navbar() {
       console.error(error);
     }
   }
+   useEffect(() => {
+    loadSettings();
+  }, []);
 
   const menuItems = [
     {

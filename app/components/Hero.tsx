@@ -46,20 +46,7 @@ export default function Hero() {
   const [current, setCurrent] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadBanners();
-  }, []);
-
-  useEffect(() => {
-    if (banners.length <= 1) return;
-
-    const timer = setInterval(() => {
-      setCurrent((prev) => (prev + 1) % banners.length);
-    }, 5000);
-
-    return () => clearInterval(timer);
-  }, [banners]);
-
+ 
   async function loadBanners() {
     try {
       const res = await fetch("/api/banners/active");
@@ -75,6 +62,20 @@ export default function Hero() {
       setLoading(false);
     }
   }
+   useEffect(() => {
+    loadBanners();
+  }, []);
+
+  useEffect(() => {
+    if (banners.length <= 1) return;
+
+    const timer = setInterval(() => {
+      setCurrent((prev) => (prev + 1) % banners.length);
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, [banners]);
+
 
   const nextSlide = () => {
     setCurrent((prev) => (prev + 1) % banners.length);
@@ -105,13 +106,15 @@ export default function Hero() {
             current === index ? "opacity-100 z-10" : "opacity-0"
           }`}
         >
-          <Image
-            src={banner.image}
-            alt={banner.title}
-            fill
-            priority={index === 0}
-            className="object-cover"
-          />
+         <Image
+  src={banner.image}
+  alt={banner.title}
+  fill
+  priority={index === 0}
+  sizes="100vw"
+  quality={85}
+  className="object-cover"
+/>
 
           <div className="absolute inset-0 bg-black/60" />
         </div>

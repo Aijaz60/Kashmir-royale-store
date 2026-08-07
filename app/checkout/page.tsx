@@ -14,6 +14,7 @@ declare global {
 
 export default function CheckoutPage() {
   const router = useRouter();
+  
 
   const { cart, clearCart } = useContext(CartContext);
 

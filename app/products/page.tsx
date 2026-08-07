@@ -19,7 +19,7 @@ interface Product {
   rating: number;
 
   stock: number;
-
+image: string;
   images: string[];
 
   featured: boolean;
@@ -38,9 +38,7 @@ export default function ProductsPage() {
   const [category, setCategory] = useState("All");
   const [sort, setSort] = useState("Newest");
 
-  useEffect(() => {
-    loadProducts();
-  }, []);
+ 
 
   async function loadProducts() {
     try {
@@ -57,6 +55,9 @@ export default function ProductsPage() {
       setLoading(false);
     }
   }
+   useEffect(() => {
+    loadProducts();
+  }, []);
   const categories = useMemo(() => {
   const list = [
     "All",
@@ -210,10 +211,11 @@ return (
               <ProductCard
                 key={product._id}
                 id={product._id}
-                image={
-                  product.images?.[0] ||
-                  "/placeholder.png"
-                }
+               image={
+  product.images?.[0] ||
+  product.image ||
+  "/placeholder.png"
+}
                 title={product.title}
                 description={product.description}
                 price={`₹${product.price.toLocaleString()}`}
@@ -227,8 +229,9 @@ return (
                     title: product.title,
                     price: product.price,
                     image:
-                      product.images?.[0] ||
-                      "/placeholder.png",
+  product.images?.[0] ||
+  product.image ||
+  "/placeholder.png",
                   })
                 }
               />
