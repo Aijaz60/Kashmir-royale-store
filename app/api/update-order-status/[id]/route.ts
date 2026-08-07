@@ -10,7 +10,7 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const { status } = await req.json();
+    const { orderStatus } = await req.json();
 
     const client = await clientPromise;
     const db = client.db("kashmir-shawls");
@@ -20,9 +20,9 @@ export async function PUT(
         _id: new ObjectId(id),
       },
       {
-        $set: {
-          status,
-        },
+       $set: {
+  orderStatus,
+},
       }
     );
 
@@ -31,27 +31,44 @@ export async function PUT(
     });
 
     if (updatedOrder?.customer?.email) {
-      if (status === "Shipped") {
-        try {
-          await sendOrderEmail(
-            updatedOrder.customer.email,
-            "📦 Your Kashmir Royale Order Has Been Shipped",
-            emailTemplate({
-              title: "Your Order Has Been Shipped 🚚",
-              customerName: updatedOrder.customer.name,
-              message:
-                "Great news! Your order has been shipped and is on its way. We'll notify you again once it has been delivered.",
-              status: "Shipped",
-              total: updatedOrder.total,
-            })
-          );
-        } catch (emailError) {
-          console.error("Shipped email failed:", emailError);
-        }
-      }
+      if (orderStatus === "Confirmed") {
+  try {
+    await sendOrderEmail(
+      updatedOrder.customer.email,
+      "🎉 Your Kashmir Royale Order Has Been Confirmed",
+      emailTemplate({
+        title: "Order Confirmed 🎉",
+        customerName: updatedOrder.customer.name,
+        message:
+          "Your order has been confirmed by our team and is now being prepared for dispatch.",
+        status: "Confirmed",
+        total: updatedOrder.total,
+      })
+    );
+  } catch (emailError) {
+    console.error("Confirmed email failed:", emailError);
+  }
+}if (orderStatus === "Shipped") {
+  try {
+    await sendOrderEmail(
+      updatedOrder.customer.email,
+      "📦 Your Kashmir Royale Order Has Been Shipped",
+      emailTemplate({
+        title: "Your Order Has Been Shipped 🚚",
+        customerName: updatedOrder.customer.name,
+        message:
+          "Great news! Your order has been shipped and is on its way. We'll notify you again once it has been delivered.",
+        status: "Shipped",
+        total: updatedOrder.total,
+      })
+    );
+  } catch (emailError) {
+    console.error("Shipped email failed:", emailError);
+  }
+}
 
-      if (status === "Delivered") {
-        try {
+  if (orderStatus === "Delivered") {
+  try {
           await sendOrderEmail(
             updatedOrder.customer.email,
             "✅ Your Kashmir Royale Order Has Been Delivered",

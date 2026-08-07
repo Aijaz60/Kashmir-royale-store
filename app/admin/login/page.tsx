@@ -29,7 +29,7 @@ export default function AdminLoginPage() {
     setLoading(false);
 
     if (result.success) {
-      localStorage.setItem("adminLoggedIn", "true");
+      
       router.push("/admin/orders");
     } else {
       alert(result.message);

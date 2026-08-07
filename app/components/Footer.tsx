@@ -228,9 +228,18 @@ export default function Footer() {
 
       </div>
 
-      <div className="border-t border-gray-800 py-6 text-center text-sm text-gray-400">
-        © {new Date().getFullYear()} {settings.websiteName}. All Rights Reserved.
-      </div>
+     <div className="border-t border-gray-800 py-6 text-center">
+  <p className="text-sm text-gray-400">
+    © {new Date().getFullYear()} {settings.websiteName}. All Rights Reserved.
+  </p>
+
+  <p className="mt-2 text-sm text-gray-500">
+    Designed & Developed by{" "}
+    <span className="font-semibold text-yellow-400">
+      Aijaz Mohiud Din
+    </span>
+  </p>
+</div>
     </footer>
   );
 }

@@ -8,13 +8,18 @@ type Product = {
   _id: string;
   title: string;
   description: string;
+  category: string;
+
   price: number;
   oldPrice: number;
   discount: string;
   rating: number;
-  images: string[];
-  category: string;
+
   stock: number;
+
+  image: string;
+  images: string[];
+
   featured: boolean;
   newArrival: boolean;
   bestSeller: boolean;
@@ -28,17 +33,25 @@ export default function Collections() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [search, setSearch] = useState("");
 
- useEffect(() => {
-  fetch("/api/products")
-    .then((res) => res.json())
-    .then((data) => {
-      setProducts(Array.isArray(data) ? data : []);
-    })
-    .catch((err) => {
-      console.error(err);
-      setProducts([]);
-    });
-}, []);
+  useEffect(() => {
+    async function loadProducts() {
+      try {
+        const res = await fetch("/api/products");
+        const data = await res.json();
+
+        if (Array.isArray(data)) {
+          setProducts(data);
+        } else {
+          setProducts([]);
+        }
+      } catch (error) {
+        console.error(error);
+        setProducts([]);
+      }
+    }
+
+    loadProducts();
+  }, []);
 
   const filteredProducts = products.filter((product) => {
     const categoryMatch =
@@ -53,10 +66,9 @@ export default function Collections() {
   });
 
   return (
-    <section id="collections" className="py-20 px-8">
-      <div className="max-w-7xl mx-auto">
-
-        <div className="flex justify-center mb-8">
+    <section id="collections" className="px-8 py-20">
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-8 flex justify-center">
           <input
             type="text"
             placeholder="Search products..."
@@ -66,12 +78,12 @@ export default function Collections() {
           />
         </div>
 
-        <div className="flex flex-wrap justify-center gap-4 mb-10">
+        <div className="mb-10 flex flex-wrap justify-center gap-4">
           {["All", "Shawls", "Pashmina", "Suits", "Stoles"].map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-5 py-2 rounded-full font-semibold transition ${
+              className={`rounded-full px-5 py-2 font-semibold transition ${
                 selectedCategory === cat
                   ? "bg-yellow-500 text-black"
                   : "bg-gray-200 hover:bg-yellow-100"
@@ -82,23 +94,27 @@ export default function Collections() {
           ))}
         </div>
 
-        <h2 className="text-4xl font-bold text-center mb-12">
+        <h2 className="mb-12 text-center text-4xl font-bold">
           Our Collections
         </h2>
 
         {filteredProducts.length === 0 ? (
-          <div className="text-center py-20">
+          <div className="py-20 text-center">
             <h3 className="text-2xl font-bold text-gray-500">
               No Products Found
             </h3>
           </div>
         ) : (
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
             {filteredProducts.map((product) => (
               <ProductCard
                 key={product._id}
                 id={product._id}
-                image={product.images?.[0] || "/placeholder.png"}
+                image={
+                  product.images?.[0] ||
+                  product.image ||
+                  "/placeholder.png"
+                }
                 title={product.title}
                 description={product.description}
                 price={`₹${product.price.toLocaleString()}`}
@@ -111,14 +127,16 @@ export default function Collections() {
                     id: product._id,
                     title: product.title,
                     price: product.price,
-                    image: product.images?.[0] || "/placeholder.png",
+                    image:
+                      product.images?.[0] ||
+                      product.image ||
+                      "/placeholder.png",
                   })
                 }
               />
             ))}
           </div>
         )}
-
       </div>
     </section>
   );

@@ -8,7 +8,15 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-
+if (!ObjectId.isValid(id)) {
+  return NextResponse.json(
+    {
+      success: false,
+      error: "Invalid product ID",
+    },
+    { status: 400 }
+  );
+}
     const client = await clientPromise;
     const db = client.db("kashmir-shawls");
 

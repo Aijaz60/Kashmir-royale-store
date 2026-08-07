@@ -15,8 +15,67 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Kashmir Royale",
-  description: "Luxury Kashmiri Shawls & Pashmina",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+  ),
+
+  title: {
+    default: "Kashmir Royale",
+    template: "%s | Kashmir Royale",
+  },
+
+  description:
+    "Shop authentic Kashmiri Shawls, Premium Pashmina, Aari Suits and handcrafted luxury collections from Kashmir Royale.",
+
+  keywords: [
+    "Kashmir Royale",
+    "Kashmiri Shawls",
+    "Pashmina",
+    "Aari Suit",
+    "Luxury Shawls",
+    "Kashmir",
+    "Handmade Shawls",
+  ],
+
+  authors: [
+    {
+      name: "Kashmir Royale",
+    },
+  ],
+
+  creator: "Kashmir Royale",
+
+  openGraph: {
+    title: "Kashmir Royale",
+    description:
+      "Authentic Kashmiri Shawls, Pashmina & Luxury Collections.",
+    url:
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      "http://localhost:3000",
+    siteName: "Kashmir Royale",
+    locale: "en_US",
+    type: "website",
+  },
+
+  twitter: {
+    card: "summary_large_image",
+    title: "Kashmir Royale",
+    description:
+      "Authentic Kashmiri Shawls & Pashmina.",
+  },
+
+  robots: {
+    index: true,
+    follow: true,
+    
+  },
+  themeColor: "#D4AF37",
+
+category: "Fashion",
+
+icons: {
+  icon: "/favicon.ico",
+},
 };
 
 export default function RootLayout({

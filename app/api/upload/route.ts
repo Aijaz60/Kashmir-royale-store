@@ -12,6 +12,35 @@ export async function POST(req: Request) {
     const formData = await req.formData();
 
     const file = formData.get("file") as File;
+   const allowedTypes = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+];
+
+if (!allowedTypes.includes(file.type)) {
+  return NextResponse.json(
+    {
+      success: false,
+      error: "Only JPG, JPEG, PNG and WEBP images are allowed.",
+    },
+    {
+      status: 400,
+    }
+  );
+} 
+if (file.size > 5 * 1024 * 1024) {
+  return NextResponse.json(
+    {
+      success: false,
+      error: "Maximum image size is 5MB.",
+    },
+    {
+      status: 400,
+    }
+  );
+}
 
     if (!file) {
       return NextResponse.json(

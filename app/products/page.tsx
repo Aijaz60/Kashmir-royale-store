@@ -49,12 +49,7 @@ export default function ProductsPage() {
       const data = await res.json();
 
       if (Array.isArray(data)) {
-        setProducts(
-          data.filter(
-            (product: Product) =>
-              product.active === true
-          )
-        );
+       setProducts(data);
       }
     } catch (error) {
       console.error(error);
@@ -199,8 +194,8 @@ return (
           Products
         </div>
 
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
- {filteredProducts.length === 0 ? (
+       <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+  {filteredProducts.length === 0 ? (
             <div className="col-span-full text-center py-20">
               <h2 className="text-3xl font-bold">
                 No Products Found

@@ -8,6 +8,15 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
+    if (!ObjectId.isValid(id)) {
+  return NextResponse.json(
+    {
+      success: false,
+      error: "Invalid product ID",
+    },
+    { status: 400 }
+  );
+}
     const { quantity } = await req.json();
 
     const client = await clientPromise;

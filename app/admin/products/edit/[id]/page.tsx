@@ -63,7 +63,7 @@ export default function EditProductPage() {
 
   async function loadProduct() {
     try {
-      const res = await fetch(`/api/products/${id}`);
+      const res = await fetch(`/api/product/${id}`);
 
       const data = await res.json();
 
@@ -75,13 +75,20 @@ export default function EditProductPage() {
         oldPrice: Number(data.oldPrice || 0),
 
         discount: data.discount || "",
-        rating: Number(data.rating || 5),
+        rating: isNaN(Number(data.rating))
+  ? 5
+  : Number(data.rating),
 
         category: data.category || "Shawls",
 
         stock: Number(data.stock || 0),
 
-        images: data.images || [],
+        images:
+  data.images?.length > 0
+    ? data.images
+    : data.image
+    ? [data.image]
+    : [],
 
         featured: data.featured || false,
         newArrival: data.newArrival || false,
@@ -292,7 +299,7 @@ export default function EditProductPage() {
                 step="0.1"
                 className="rounded-xl border p-3"
                 placeholder="Rating"
-                value={product.rating}
+                value={Number.isNaN(product.rating) ? "" : product.rating}
                 onChange={(e) =>
                   setProduct({
                     ...product,

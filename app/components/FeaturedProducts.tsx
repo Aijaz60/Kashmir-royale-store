@@ -5,6 +5,7 @@ import { CartContext } from "../context/CartContext";
 import ProductCard from "./ProductCard";
 
 interface Product {
+  image: string;
   _id: string;
 
   title: string;
@@ -114,7 +115,11 @@ export default function FeaturedProducts() {
             <ProductCard
               key={product._id}
               id={product._id}
-              image={product.images?.[0] || "/placeholder.png"}
+              image={
+  product.images?.[0] ||
+  product.image ||
+  "/placeholder.png"
+}
               title={product.title}
               description={product.description}
               price={`₹${product.price.toLocaleString()}`}
@@ -127,7 +132,10 @@ export default function FeaturedProducts() {
                   id: product._id,
                   title: product.title,
                   price: product.price,
-                  image: product.images?.[0] || "/placeholder.png",
+                  image:
+  product.images?.[0] ||
+  product.image ||
+  "/placeholder.png",
                 })
               }
             />

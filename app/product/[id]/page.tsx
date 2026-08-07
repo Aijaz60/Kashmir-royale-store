@@ -4,6 +4,7 @@ import { useState, useEffect, useContext } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   FaHeart,
   FaStar,
@@ -50,6 +51,7 @@ type Product = {
 
 export default function ProductDetailsPage() {
   const params = useParams();
+  const router = useRouter();
 
   const {
   addToCart,
@@ -63,6 +65,22 @@ export default function ProductDetailsPage() {
   const [loading, setLoading] = useState(true);
 
   const [selectedImage, setSelectedImage] = useState("");
+ const [zoomed, setZoomed] = useState(false);
+const [position, setPosition] = useState({
+  x: 50,
+  y: 50,
+}); 
+function handleMouseMove(
+  e: React.MouseEvent<HTMLDivElement>
+) {
+  const { left, top, width, height } =
+    e.currentTarget.getBoundingClientRect();
+
+  const x = ((e.clientX - left) / width) * 100;
+  const y = ((e.clientY - top) / height) * 100;
+
+  setPosition({ x, y });
+}
   const [quantity, setQuantity] = useState(1);
   const [reviewName, setReviewName] = useState("");
 const [reviewRating, setReviewRating] = useState(5);
@@ -115,10 +133,11 @@ async function submitReview() {
   }
 }
   useEffect(() => {
+    console.log("Product ID:", params.id);
     async function loadProduct() {
       try {
         const res = await fetch(`/api/product/${params.id}`);
-
+console.log("Response Status:", res.status);
         if (!res.ok) {
           setLoading(false);
           return;
@@ -127,7 +146,17 @@ async function submitReview() {
         const data: Product = await res.json();
 
         setProduct(data);
+function handleMouseMove(
+  e: React.MouseEvent<HTMLDivElement>
+) {
+  const { left, top, width, height } =
+    e.currentTarget.getBoundingClientRect();
 
+  const x = ((e.clientX - left) / width) * 100;
+  const y = ((e.clientY - top) / height) * 100;
+
+  setPosition({ x, y });
+}
         setSelectedImage(
   data.images?.[0] || data.image || "/images/placeholder.jpg"
 );
@@ -189,14 +218,23 @@ if (relatedRes.ok) {
           {/* Left Side */}
         <div>
           
-          <div className="overflow-hidden rounded-3xl border border-gray-200 shadow-2xl">
+          <div
+  className="relative overflow-hidden rounded-3xl border border-gray-200 shadow-2xl"
+  onMouseEnter={() => setZoomed(true)}
+  onMouseLeave={() => setZoomed(false)}
+  onMouseMove={handleMouseMove}
+>
   <Image
     src={selectedImage}
     alt={product.title}
     width={700}
     height={700}
     priority
-    className="h-full w-full object-cover transition-transform duration-500 hover:scale-110"
+    className="h-full w-full object-cover transition-transform duration-300"
+    style={{
+      transform: zoomed ? "scale(2)" : "scale(1)",
+      transformOrigin: `${position.x}% ${position.y}%`,
+    }}
   />
 </div>
 <div className="mt-5 flex flex-wrap justify-center gap-3">
@@ -356,7 +394,11 @@ if (relatedRes.ok) {
             </span>
 
             <button
-              onClick={() => setQuantity(quantity + 1)}
+              onClick={() => {
+  if (quantity < product.stock) {
+    setQuantity(quantity + 1);
+  }
+}}
               className="h-10 w-10 rounded border"
             >
               +
@@ -393,9 +435,28 @@ if (relatedRes.ok) {
 
             {product.stock > 0 ? (
   <Link href="/checkout">
-    <button className="w-full rounded-xl bg-black py-4 text-lg font-bold text-white transition hover:bg-gray-900">
-      ⚡ Buy Now
-    </button>
+    addToCart(...)
+router.push("/checkout")
+   <button
+  onClick={() => {
+    if (!product) return;
+
+    addToCart({
+      id: product._id,
+      title: product.title,
+      price: product.price,
+      image:
+        product.images?.[0] ||
+        product.image ||
+        "/placeholder.png",
+    });
+
+    router.push("/checkout");
+  }}
+  className="flex-1 rounded-xl bg-black px-6 py-4 font-semibold text-white transition hover:bg-gray-800"
+>
+  ⚡ Buy Now
+</button>
   </Link>
 ) : (
   <button

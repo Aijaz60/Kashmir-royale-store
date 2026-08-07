@@ -3,14 +3,59 @@ import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get("admin-auth")?.value;
+  const { pathname } = request.nextUrl;
 
-  if (!token) {
-    return NextResponse.redirect(new URL("/admin/login", request.url));
+  // Allow Admin Login Page
+  if (pathname === "/admin/login") {
+    return NextResponse.next();
+  }
+
+  // Protect Admin Pages
+  if (pathname.startsWith("/admin")) {
+    if (token !== "logged-in") {
+      return NextResponse.redirect(
+        new URL("/admin/login", request.url)
+      );
+    }
+  }
+
+  // Protect Admin APIs
+  if (
+    pathname.startsWith("/api/orders") ||
+    pathname.startsWith("/api/update-order-status") ||
+    pathname.startsWith("/api/settings") ||
+    pathname.startsWith("/api/banners") ||
+    pathname.startsWith("/api/products/add") ||
+    pathname.startsWith("/api/products/edit") ||
+    pathname.startsWith("/api/products/delete") ||
+    pathname.startsWith("/api/upload")
+  ) {
+    if (token !== "logged-in") {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Unauthorized",
+        },
+        {
+          status: 401,
+        }
+      );
+    }
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/admin/orders"],
+  matcher: [
+    "/admin/:path*",
+    "/api/orders",
+    "/api/update-order-status/:path*",
+    "/api/settings/:path*",
+    "/api/banners/:path*",
+    "/api/products/add/:path*",
+    "/api/products/edit/:path*",
+    "/api/products/delete/:path*",
+    "/api/upload/:path*",
+  ],
 };
