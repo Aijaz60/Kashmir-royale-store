@@ -60,9 +60,7 @@ export default function Footer() {
   const [settings, setSettings] =
     useState<WebsiteSettings>(defaultSettings);
 
-  useEffect(() => {
-    loadSettings();
-  }, []);
+ 
 
   async function loadSettings() {
     try {
@@ -79,6 +77,9 @@ export default function Footer() {
       console.error(error);
     }
   }
+   useEffect(() => {
+    loadSettings();
+  }, []);
     return (
     <footer className="mt-20 border-t border-yellow-500/20 bg-black text-white">
       <div className="mx-auto grid max-w-7xl gap-10 px-6 py-14 md:grid-cols-4">
@@ -114,7 +115,12 @@ export default function Footer() {
 
             <div className="flex items-center gap-3">
               <FaEnvelope className="text-yellow-500" />
-              <span>{settings.email}</span>
+              <a
+  href={`mailto:${settings.email}`}
+  className="hover:text-yellow-400"
+>
+  {settings.email}
+</a>
             </div>
 
           </div>
