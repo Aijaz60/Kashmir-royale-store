@@ -71,24 +71,33 @@ export default function WebsiteSettingsPage() {
     useState<WebsiteSettings>(initialState);
 
   useEffect(() => {
-    loadSettings();
+    let cancelled = false;
+
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return;
+
+        if (data.success && data.settings) {
+          setForm({
+            ...initialState,
+            ...data.settings,
+          });
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          console.error(
+            "Failed to load website settings:",
+            error
+          );
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
-
-  async function loadSettings() {
-    try {
-      const res = await fetch("/api/settings");
-      const data = await res.json();
-
-      if (data.success && data.settings) {
-        setForm({
-          ...initialState,
-          ...data.settings,
-        });
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  }
 
   async function saveSettings() {
     setLoading(true);
@@ -112,11 +121,12 @@ export default function WebsiteSettingsPage() {
     } catch (error) {
       console.error(error);
       alert("Something went wrong");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }
-    return (
+
+  return (
     <main className="min-h-screen bg-gray-100 p-8">
       <div className="mx-auto max-w-7xl rounded-2xl bg-white p-8 shadow-xl">
 
@@ -125,8 +135,8 @@ export default function WebsiteSettingsPage() {
         </h1>
 
         <p className="mb-10 text-gray-500">
-          Manage your store information, contact details, shipping,
-          announcement bar and SEO.
+          Manage your store information, contact details,
+          shipping, announcement bar and SEO.
         </p>
 
         {/* Store Information */}
@@ -264,7 +274,8 @@ export default function WebsiteSettingsPage() {
           </div>
 
         </div>
-                {/* Announcement Bar */}
+
+        {/* Announcement Bar */}
         <div className="mb-10 rounded-2xl border bg-gray-50 p-6">
 
           <h2 className="mb-6 text-2xl font-bold">
@@ -280,7 +291,8 @@ export default function WebsiteSettingsPage() {
                 onChange={(e) =>
                   setForm({
                     ...form,
-                    announcementEnabled: e.target.checked,
+                    announcementEnabled:
+                      e.target.checked,
                   })
                 }
               />
@@ -426,7 +438,8 @@ export default function WebsiteSettingsPage() {
           </div>
 
         </div>
-                {/* SEO Settings */}
+
+        {/* SEO Settings */}
         <div className="mb-10 rounded-2xl border bg-gray-50 p-6">
 
           <h2 className="mb-6 text-2xl font-bold">
@@ -485,7 +498,9 @@ export default function WebsiteSettingsPage() {
             disabled={loading}
             className="rounded-xl bg-gradient-to-r from-yellow-500 to-amber-600 px-10 py-4 font-bold text-black transition-all duration-300 hover:scale-105 hover:from-yellow-400 hover:to-yellow-500 disabled:opacity-60"
           >
-            {loading ? "Saving..." : "💾 Save Website Settings"}
+            {loading
+              ? "Saving..."
+              : "💾 Save Website Settings"}
           </button>
 
         </div>

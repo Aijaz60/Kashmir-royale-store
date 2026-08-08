@@ -60,29 +60,39 @@ export default function Footer() {
   const [settings, setSettings] =
     useState<WebsiteSettings>(defaultSettings);
 
- 
+  useEffect(() => {
+    let cancelled = false;
 
-  async function loadSettings() {
-    try {
-      const res = await fetch("/api/settings");
-      const data = await res.json();
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return;
 
-      if (data.success) {
-        setSettings({
-          ...defaultSettings,
-          ...data.settings,
-        });
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  }
-   useEffect(() => {
-    loadSettings();
+        if (data.success) {
+          setSettings({
+            ...defaultSettings,
+            ...data.settings,
+          });
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          console.error(
+            "Failed to load footer settings:",
+            error
+          );
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
-    return (
-    <footer className="mt-20 border-t border-yellow-500/20 bg-black text-white">
-      <div className="mx-auto grid max-w-7xl gap-10 px-6 py-14 md:grid-cols-4">
+
+  return (
+    <footer className="bg-black text-white">
+
+      <div className="mx-auto grid max-w-7xl gap-10 px-6 py-16 md:grid-cols-2 lg:grid-cols-4">
 
         {/* Brand */}
         <div>
@@ -115,12 +125,13 @@ export default function Footer() {
 
             <div className="flex items-center gap-3">
               <FaEnvelope className="text-yellow-500" />
+
               <a
-  href={`mailto:${settings.email}`}
-  className="hover:text-yellow-400"
->
-  {settings.email}
-</a>
+                href={`mailto:${settings.email}`}
+                className="hover:text-yellow-400"
+              >
+                {settings.email}
+              </a>
             </div>
 
           </div>
@@ -132,11 +143,51 @@ export default function Footer() {
             Quick Links
           </h3>
 
-          <ul className="space-y-3">
-            <li><Link href="/" className="hover:text-yellow-400">Home</Link></li>
-            <li><Link href="/#collections" className="hover:text-yellow-400">Collections</Link></li>
-            <li><Link href="/cart" className="hover:text-yellow-400">Cart</Link></li>
-            <li><Link href="/contact" className="hover:text-yellow-400">Contact</Link></li>
+          <ul className="space-y-3 text-gray-300">
+            <li>
+              <Link
+                href="/"
+                className="hover:text-yellow-400"
+              >
+                Home
+              </Link>
+            </li>
+
+            <li>
+              <Link
+                href="/#collections"
+                className="hover:text-yellow-400"
+              >
+                Collections
+              </Link>
+            </li>
+
+            <li>
+              <Link
+                href="/cart"
+                className="hover:text-yellow-400"
+              >
+                Cart
+              </Link>
+            </li>
+
+            <li>
+              <Link
+                href="/wishlist"
+                className="hover:text-yellow-400"
+              >
+                Wishlist
+              </Link>
+            </li>
+
+            <li>
+              <Link
+                href="/contact"
+                className="hover:text-yellow-400"
+              >
+                Contact
+              </Link>
+            </li>
           </ul>
         </div>
 
@@ -154,14 +205,12 @@ export default function Footer() {
             </p>
 
             <p>
-              🇮🇳 India Delivery:
-              {" "}
+              🇮🇳 India Delivery:{" "}
               {settings.indiaDeliveryDays} Days
             </p>
 
             <p>
-              🌍 International:
-              {" "}
+              🌍 International:{" "}
               {settings.internationalDeliveryDays} Days
             </p>
 
@@ -181,6 +230,7 @@ export default function Footer() {
                 href={settings.facebook}
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label="Facebook"
                 className="transition hover:text-yellow-400"
               >
                 <FaFacebookF />
@@ -192,6 +242,7 @@ export default function Footer() {
                 href={settings.instagram}
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label="Instagram"
                 className="transition hover:text-yellow-400"
               >
                 <FaInstagram />
@@ -203,6 +254,7 @@ export default function Footer() {
                 href={settings.youtube}
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label="YouTube"
                 className="transition hover:text-yellow-400"
               >
                 <FaYoutube />
@@ -214,6 +266,7 @@ export default function Footer() {
                 href={settings.twitter}
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label="X / Twitter"
                 className="transition hover:text-yellow-400"
               >
                 <FaXTwitter />
@@ -221,9 +274,13 @@ export default function Footer() {
             )}
 
             <a
-              href={`https://wa.me/${settings.whatsapp.replace(/\D/g, "")}`}
+              href={`https://wa.me/${settings.whatsapp.replace(
+                /\D/g,
+                ""
+              )}`}
               target="_blank"
               rel="noopener noreferrer"
+              aria-label="WhatsApp"
               className="transition hover:text-green-400"
             >
               <FaWhatsapp />
@@ -234,18 +291,11 @@ export default function Footer() {
 
       </div>
 
-     <div className="border-t border-gray-800 py-6 text-center">
-  <p className="text-sm text-gray-400">
-    © {new Date().getFullYear()} {settings.websiteName}. All Rights Reserved.
-  </p>
+      <div className="border-t border-gray-800 py-6 text-center text-sm text-gray-500">
+        © {new Date().getFullYear()}{" "}
+        {settings.websiteName}. All rights reserved.
+      </div>
 
-  <p className="mt-2 text-sm text-gray-500">
-    Designed & Developed by{" "}
-    <span className="font-semibold text-yellow-400">
-      Aijaz Mohiud Din
-    </span>
-  </p>
-</div>
     </footer>
   );
 }

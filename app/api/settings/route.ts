@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import clientPromise from "../../lib/mongodb";
 
+interface SettingsDocument {
+  _id: string;
+  [key: string]: unknown;
+}
 
 const COLLECTION = "settings";
 const DOCUMENT_ID = "website-settings";
@@ -10,13 +14,16 @@ export async function GET() {
     const client = await clientPromise;
     const db = client.db("kashmir-shawls");
 
-    const settings = await db.collection<any>(COLLECTION).findOne({
-      _id: DOCUMENT_ID,
+    const settings = await db
+      .collection<SettingsDocument>(COLLECTION)
+      .findOne({
+        _id: DOCUMENT_ID,
+      });
+
+    return NextResponse.json({
+      success: true,
+      settings: settings ?? {},
     });
-return NextResponse.json({
-  success: true,
-  settings: settings ?? {},
-});
   } catch (error) {
     console.error(error);
 
@@ -34,25 +41,28 @@ return NextResponse.json({
 
 export async function POST(req: Request) {
   try {
-    const body: Record<string, unknown> = await req.json();
+    const body: Record<string, unknown> =
+      await req.json();
 
     const client = await clientPromise;
     const db = client.db("kashmir-shawls");
 
-await db.collection<any>(COLLECTION).updateOne(
-  {
-   _id: DOCUMENT_ID,
-  },
-  {
-    $set: {
-      ...(body as Record<string, unknown>),
-      updatedAt: new Date(),
-    },
-  },
-  {
-    upsert: true,
-  }
-);
+    await db
+      .collection<SettingsDocument>(COLLECTION)
+      .updateOne(
+        {
+          _id: DOCUMENT_ID,
+        },
+        {
+          $set: {
+            ...body,
+            updatedAt: new Date(),
+          },
+        },
+        {
+          upsert: true,
+        }
+      );
 
     return NextResponse.json({
       success: true,

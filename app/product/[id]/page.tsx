@@ -146,17 +146,7 @@ console.log("Response Status:", res.status);
         const data: Product = await res.json();
 
         setProduct(data);
-function handleMouseMove(
-  e: React.MouseEvent<HTMLDivElement>
-) {
-  const { left, top, width, height } =
-    e.currentTarget.getBoundingClientRect();
 
-  const x = ((e.clientX - left) / width) * 100;
-  const y = ((e.clientY - top) / height) * 100;
-
-  setPosition({ x, y });
-}
         setSelectedImage(
   data.images?.[0] || data.image || "/images/placeholder.jpg"
 );
@@ -434,10 +424,7 @@ if (relatedRes.ok) {
             </button>
 
             {product.stock > 0 ? (
-  <Link href="/checkout">
-    addToCart(...)
-router.push("/checkout")
-   <button
+    <button
   onClick={() => {
     if (!product) return;
 
@@ -457,7 +444,6 @@ router.push("/checkout")
 >
   ⚡ Buy Now
 </button>
-  </Link>
 ) : (
   <button
     disabled
@@ -468,7 +454,7 @@ router.push("/checkout")
 )}
             <a
               href={`https://wa.me/917298129017?text=${encodeURIComponent(
-                `Hello, I want to order "${product.title}" for ₹${product.price}.`
+                `Hello, I want to order &quot;${product.title}&quot; for ₹${product.price}.`
               )}`}
               target="_blank"
               rel="noopener noreferrer"

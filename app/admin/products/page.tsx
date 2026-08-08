@@ -6,10 +6,8 @@ import Link from "next/link";
 
 interface Product {
   _id: string;
-
   title: string;
   description: string;
-
   category: string;
 
   price: number;
@@ -41,35 +39,78 @@ export default function AdminProductsPage() {
   const [deleteModal, setDeleteModal] = useState(false);
   const [selectedId, setSelectedId] = useState("");
 
+  /*
+   * Load products
+   *
+   * The fetch is directly inside useEffect so
+   * there is no function declaration-order lint error.
+   */
   useEffect(() => {
-    loadProducts();
+    let cancelled = false;
+
+    fetch("/api/products")
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return;
+
+        if (Array.isArray(data)) {
+          setProducts(data);
+        } else {
+          setProducts([]);
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          console.error("Failed to load products:", error);
+          setProducts([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  async function loadProducts() {
-    try {
-      const res = await fetch("/api/products");
+  /*
+   * Categories
+   */
+  const categories = useMemo(() => {
+    const categorySet = new Set(
+      products.map((product) => product.category)
+    );
 
-      const data = await res.json();
+    return ["All", ...Array.from(categorySet)];
+  }, [products]);
 
-      setProducts(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
+  /*
+   * Filter products
+   *
+   * Create a new array first so the original
+   * products state is never mutated.
+   */
   const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
+    const sourceProducts = [...products];
+
+    return sourceProducts.filter((product) => {
       const matchCategory =
         category === "All" ||
         product.category === category;
 
-      const keyword = search.toLowerCase();
+      const keyword = search.toLowerCase().trim();
 
       const matchSearch =
-        product.title.toLowerCase().includes(keyword) ||
-        product.description.toLowerCase().includes(keyword);
+        keyword === "" ||
+        product.title
+          .toLowerCase()
+          .includes(keyword) ||
+        product.description
+          .toLowerCase()
+          .includes(keyword);
 
       return matchCategory && matchSearch;
     });
@@ -92,9 +133,11 @@ export default function AdminProductsPage() {
       }
     } catch (error) {
       console.error(error);
+      alert("Failed to delete product");
     }
   }
-    const totalProducts = products.length;
+
+  const totalProducts = products.length;
 
   const featuredProducts = products.filter(
     (product) => product.featured
@@ -114,7 +157,6 @@ export default function AdminProductsPage() {
 
         {/* Header */}
         <div className="mb-10 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-
           <div>
             <h1 className="text-4xl font-bold">
               Product Management
@@ -131,7 +173,6 @@ export default function AdminProductsPage() {
           >
             + Add Product
           </Link>
-
         </div>
 
         {/* Statistics */}
@@ -195,15 +236,16 @@ export default function AdminProductsPage() {
             onChange={(e) => setCategory(e.target.value)}
             className="rounded-xl border p-3"
           >
-            <option>All</option>
-            <option>Shawls</option>
-            <option>Pashmina</option>
-            <option>Suits</option>
-            <option>Stoles</option>
+            {categories.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
           </select>
 
         </div>
-                {/* Products Table */}
+
+        {/* Products Table */}
         <div className="overflow-x-auto rounded-2xl bg-white shadow">
 
           <table className="w-full">
@@ -223,7 +265,6 @@ export default function AdminProductsPage() {
             <tbody>
 
               {loading ? (
-
                 <tr>
                   <td
                     colSpan={7}
@@ -232,9 +273,7 @@ export default function AdminProductsPage() {
                     Loading products...
                   </td>
                 </tr>
-
               ) : filteredProducts.length === 0 ? (
-
                 <tr>
                   <td
                     colSpan={7}
@@ -243,11 +282,8 @@ export default function AdminProductsPage() {
                     No products found.
                   </td>
                 </tr>
-
               ) : (
-
                 filteredProducts.map((product) => (
-
                   <tr
                     key={product._id}
                     className="border-b hover:bg-gray-50"
@@ -301,25 +337,24 @@ export default function AdminProductsPage() {
                     </td>
 
                     <td className="p-4">
-                      ₹{product.price.toLocaleString()}
+                      ₹{product.price.toLocaleString("en-IN")}
                     </td>
 
-                   <td className="p-4">
-  {product.stock <= 0 ? (
-    <span className="rounded-full bg-red-100 px-3 py-1 text-sm font-semibold text-red-700">
-      🔴 Out of Stock
-    </span>
-  ) : product.stock <= 5 ? (
-    <span className="rounded-full bg-yellow-100 px-3 py-1 text-sm font-semibold text-yellow-700">
-      🟡 Low Stock ({product.stock})
-    </span>
-  ) : (
-    <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-700">
-      🟢 In Stock ({product.stock})
-    </span>
-  )}
-</td>
-                    
+                    <td className="p-4">
+                      {product.stock <= 0 ? (
+                        <span className="rounded-full bg-red-100 px-3 py-1 text-sm font-semibold text-red-700">
+                          🔴 Out of Stock
+                        </span>
+                      ) : product.stock <= 5 ? (
+                        <span className="rounded-full bg-yellow-100 px-3 py-1 text-sm font-semibold text-yellow-700">
+                          🟡 Low Stock ({product.stock})
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-700">
+                          🟢 In Stock ({product.stock})
+                        </span>
+                      )}
+                    </td>
 
                     <td className="p-4">
                       {product.active ? (
@@ -358,9 +393,7 @@ export default function AdminProductsPage() {
                     </td>
 
                   </tr>
-
                 ))
-
               )}
 
             </tbody>

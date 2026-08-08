@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
 import clientPromise from "../../../lib/mongodb";
+import type { Document } from "mongodb";
+
+interface Banner extends Document {
+  active: boolean;
+  createdAt?: Date;
+}
 
 export async function GET() {
   try {
@@ -7,7 +13,7 @@ export async function GET() {
     const db = client.db("kashmir-shawls");
 
     const banners = await db
-      .collection<any>("banners")
+      .collection<Banner>("banners")
       .find({
         active: true,
       })

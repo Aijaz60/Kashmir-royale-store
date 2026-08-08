@@ -85,26 +85,35 @@ export default function Navbar() {
 
   const wishlistCount = wishlist.length;
 
-  async function loadSettings() {
+ useEffect(() => {
+  let cancelled = false;
+
+  const fetchSettings = async () => {
     try {
       const res = await fetch("/api/settings");
-
       const data = await res.json();
 
-      if (data.success) {
+      if (!cancelled && data.success) {
         setSettings({
           ...defaultSettings,
           ...data.settings,
         });
       }
     } catch (error) {
-      console.error("Failed to load settings:", error);
+      if (!cancelled) {
+        console.error("Failed to load settings:", error);
+      }
     }
-  }
+  };
 
-  useEffect(() => {
-    loadSettings();
-  }, []);
+  fetchSettings();
+
+  return () => {
+    cancelled = true;
+  };
+}, []);
+
+ 
 
   async function loadProducts() {
     if (products.length > 0) {

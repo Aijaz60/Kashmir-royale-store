@@ -128,10 +128,40 @@ export default function AdminOrdersPage() {
   const [paymentFilter, setPaymentFilter] = useState("All");
   const [methodFilter, setMethodFilter] = useState("All");
 
-  const loadOrders = useCallback(async () => {
-    try {
-      setLoading(true);
+ const loadOrders = useCallback(async () => {
+  try {
+    setLoading(true);
 
+    const res = await fetch("/api/orders", {
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      throw new Error("Failed to fetch orders");
+    }
+
+    const data = await res.json();
+
+    if (Array.isArray(data)) {
+      setOrders(data);
+    } else if (Array.isArray(data.orders)) {
+      setOrders(data.orders);
+    } else {
+      setOrders([]);
+    }
+  } catch (error) {
+    console.error(error);
+    setOrders([]);
+  } finally {
+    setLoading(false);
+  }
+}, []);
+
+useEffect(() => {
+  let cancelled = false;
+
+  async function fetchInitialOrders() {
+    try {
       const res = await fetch("/api/orders", {
         cache: "no-store",
       });
@@ -142,6 +172,10 @@ export default function AdminOrdersPage() {
 
       const data = await res.json();
 
+      if (cancelled) {
+        return;
+      }
+
       if (Array.isArray(data)) {
         setOrders(data);
       } else if (Array.isArray(data.orders)) {
@@ -150,16 +184,23 @@ export default function AdminOrdersPage() {
         setOrders([]);
       }
     } catch (error) {
-      console.error(error);
-      setOrders([]);
+      if (!cancelled) {
+        console.error(error);
+        setOrders([]);
+      }
     } finally {
-      setLoading(false);
+      if (!cancelled) {
+        setLoading(false);
+      }
     }
-  }, []);
+  }
 
-  useEffect(() => {
-    void loadOrders();
-  }, [loadOrders]);
+  fetchInitialOrders();
+
+  return () => {
+    cancelled = true;
+  };
+}, []);
 
   const refreshOrders = async () => {
     try {

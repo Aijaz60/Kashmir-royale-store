@@ -9,6 +9,7 @@ import {
   Tooltip,
   Legend,
   Filler,
+  type TooltipItem,
 } from "chart.js";
 
 import { Line } from "react-chartjs-2";
@@ -89,9 +90,13 @@ export default function RevenueChart({ data }: Props) {
     },
     tooltip: {
       callbacks: {
-        label: function (context: any) {
-          return `₹${context.parsed.y.toLocaleString()}`;
-        },
+       label: function (
+  context: TooltipItem<"line">
+) {
+ const value = context.parsed.y ?? 0;
+
+return `₹${value.toLocaleString("en-IN")}`;
+},
       },
     },
   },
@@ -100,9 +105,18 @@ export default function RevenueChart({ data }: Props) {
     y: {
       beginAtZero: true,
       ticks: {
-        callback: function (value: any) {
-          return "₹" + value.toLocaleString();
-        },
+        callback: function (
+  value: string | number
+) {
+ const numericValue =
+  typeof value === "number"
+    ? value
+    : Number(value ?? 0);
+
+return `₹${numericValue.toLocaleString(
+  "en-IN"
+)}`;
+},
       },
     },
   },

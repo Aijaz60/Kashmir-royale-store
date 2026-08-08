@@ -1,5 +1,6 @@
 import clientPromise from "./mongodb";
 
+
 export interface WebsiteSettings {
   logo: string;
   websiteName: string;
@@ -44,7 +45,9 @@ const DEFAULT_SETTINGS: WebsiteSettings = {
   indiaDeliveryDays: "10",
   internationalDeliveryDays: "20",
 };
-
+type WebsiteSettingsDocument = WebsiteSettings & {
+  _id: string;
+};
 export async function getWebsiteSettings(): Promise<WebsiteSettings> {
   try {
     const client = await clientPromise;
@@ -52,7 +55,7 @@ export async function getWebsiteSettings(): Promise<WebsiteSettings> {
     const db = client.db("kashmir-shawls");
 
     const settings = await db
-      .collection<any>("settings")
+      .collection<WebsiteSettingsDocument>("settings")
       .findOne({
         _id: "website-settings",
       });

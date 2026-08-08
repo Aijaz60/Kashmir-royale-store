@@ -1,8 +1,8 @@
 "use client";
 
 import { useContext, useEffect, useMemo, useState } from "react";
-import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import Navbar from "../components/Navbar";
 import ProductCard from "../components/ProductCard";
 import { CartContext } from "../context/CartContext";
 
@@ -36,8 +36,17 @@ export default function ProductsPage() {
   const [loading, setLoading] =
     useState(true);
 
-  const [search, setSearch] =
-    useState("");
+  const [search, setSearch] = useState(() => {
+    if (typeof window === "undefined") {
+      return "";
+    }
+
+    return (
+      new URLSearchParams(
+        window.location.search
+      ).get("search") || ""
+    );
+  });
 
   const [category, setCategory] =
     useState("All");
@@ -46,74 +55,57 @@ export default function ProductsPage() {
     useState("Newest");
 
   /*
-   * Load search text from URL
-   *
-   * Example:
-   * /products?search=Pashmina
+   * Load products
    */
   useEffect(() => {
-    const params = new URLSearchParams(
-      window.location.search
-    );
+    let cancelled = false;
 
-    const searchQuery =
-      params.get("search");
+    fetch("/api/products")
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return;
 
-    if (searchQuery) {
-      setSearch(searchQuery);
-    }
+        if (Array.isArray(data)) {
+          setProducts(data);
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          console.error(
+            "Failed to load products:",
+            error
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
-
-  /*
-   * Load Products
-   */
-  useEffect(() => {
-    loadProducts();
-  }, []);
-
-  async function loadProducts() {
-    try {
-      const res = await fetch(
-        "/api/products"
-      );
-
-      const data = await res.json();
-
-      if (Array.isArray(data)) {
-        setProducts(data);
-      }
-    } catch (error) {
-      console.error(
-        "Failed to load products:",
-        error
-      );
-    } finally {
-      setLoading(false);
-    }
-  }
 
   /*
    * Categories
    */
   const categories = useMemo(() => {
-    const list = [
-      "All",
-      ...new Set(
-        products.map(
-          (product) => product.category
-        )
-      ),
-    ];
+    const categorySet = new Set(
+      products.map(
+        (product) => product.category
+      )
+    );
 
-    return list;
+    return ["All", ...Array.from(categorySet)];
   }, [products]);
 
   /*
    * Filter + Search + Sort
    */
-  const filteredProducts = useMemo(() => {
-    let filtered = [...products];
-
+ const filteredProducts = useMemo(() => {
+  const filtered = products.filter((product) => {
     /*
      * Search
      */
@@ -121,66 +113,63 @@ export default function ProductsPage() {
       const searchText =
         search.toLowerCase().trim();
 
-      filtered = filtered.filter(
-        (product) =>
-          product.title
-            .toLowerCase()
-            .includes(searchText) ||
-          product.description
-            .toLowerCase()
-            .includes(searchText) ||
-          product.category
-            .toLowerCase()
-            .includes(searchText)
-      );
+      const matchesSearch =
+        product.title
+          .toLowerCase()
+          .includes(searchText) ||
+        product.description
+          .toLowerCase()
+          .includes(searchText) ||
+        product.category
+          .toLowerCase()
+          .includes(searchText);
+
+      if (!matchesSearch) {
+        return false;
+      }
     }
 
     /*
      * Category
      */
-    if (category !== "All") {
-      filtered = filtered.filter(
-        (product) =>
-          product.category === category
-      );
+    if (
+      category !== "All" &&
+      product.category !== category
+    ) {
+      return false;
     }
 
-    /*
-     * Sorting
-     */
-    switch (sort) {
-      case "Price Low":
-        filtered.sort(
-          (a, b) =>
-            a.price - b.price
-        );
-        break;
+    return true;
+  });
 
-      case "Price High":
-        filtered.sort(
-          (a, b) =>
-            b.price - a.price
-        );
-        break;
+  /*
+   * Sorting
+   */
+  if (sort === "Price Low") {
+    return [...filtered].sort(
+      (a, b) => a.price - b.price
+    );
+  }
 
-      case "Rating":
-        filtered.sort(
-          (a, b) =>
-            b.rating - a.rating
-        );
-        break;
+  if (sort === "Price High") {
+    return [...filtered].sort(
+      (a, b) => b.price - a.price
+    );
+  }
 
-      default:
-        break;
-    }
+  if (sort === "Rating") {
+    return [...filtered].sort(
+      (a, b) => b.rating - a.rating
+    );
+  }
 
-    return filtered;
-  }, [
-    products,
-    search,
-    category,
-    sort,
-  ]);
+  return filtered;
+}, [
+  products,
+  search,
+  category,
+  sort,
+]);
 
   /*
    * Loading Screen
@@ -190,14 +179,10 @@ export default function ProductsPage() {
       <>
         <Navbar />
 
-        <main className="flex min-h-screen items-center justify-center bg-gray-50">
-          <div className="text-center">
-            <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-yellow-500" />
-
-            <p className="text-lg font-semibold text-gray-600">
-              Loading Products...
-            </p>
-          </div>
+        <main className="flex min-h-screen items-center justify-center bg-gray-50 px-6 pt-32">
+          <p className="text-lg font-semibold text-gray-600">
+            Loading Products...
+          </p>
         </main>
 
         <Footer />
@@ -294,6 +279,7 @@ export default function ProductsPage() {
                 Rating
               </option>
             </select>
+
           </div>
 
           {/* Result Count */}
@@ -309,9 +295,10 @@ export default function ProductsPage() {
 
             {search && (
               <p className="rounded-full bg-yellow-100 px-4 py-2 text-sm font-semibold text-yellow-800">
-                Search: "{search}"
+                Search: &quot;{search}&quot;
               </p>
             )}
+
           </div>
 
           {/* Products Grid */}
@@ -344,6 +331,7 @@ export default function ProductsPage() {
                     Clear Search
                   </button>
                 )}
+
               </div>
             ) : (
               filteredProducts.map(
@@ -390,6 +378,7 @@ export default function ProductsPage() {
             )}
 
           </div>
+
         </div>
       </main>
 
