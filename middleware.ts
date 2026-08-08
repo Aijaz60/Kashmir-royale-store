@@ -1,24 +1,89 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export function middleware(request: NextRequest) {
+async function verifyAuthToken(token: string | undefined) {
+  if (!token) {
+    return false;
+  }
+
+  const secret = process.env.ADMIN_AUTH_SECRET;
+
+  if (!secret) {
+    console.error("ADMIN_AUTH_SECRET is not configured");
+    return false;
+  }
+
+  const parts = token.split(".");
+
+  if (parts.length !== 2) {
+    return false;
+  }
+
+  const [timestamp, signature] = parts;
+
+  const issuedAt = Number(timestamp);
+
+  if (!Number.isFinite(issuedAt)) {
+    return false;
+  }
+
+  const maxAge = 24 * 60 * 60 * 1000;
+
+  if (Date.now() - issuedAt > maxAge) {
+    return false;
+  }
+
+  try {
+    const encoder = new TextEncoder();
+
+    const key = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(secret),
+      {
+        name: "HMAC",
+        hash: "SHA-256",
+      },
+      false,
+      ["verify"]
+    );
+
+    const signatureBytes = new Uint8Array(
+      signature
+        .match(/.{1,2}/g)
+        ?.map((byte) => parseInt(byte, 16)) ?? []
+    );
+
+    return await crypto.subtle.verify(
+      "HMAC",
+      key,
+      signatureBytes,
+      encoder.encode(timestamp)
+    );
+  } catch {
+    return false;
+  }
+}
+
+export async function middleware(request: NextRequest) {
   const token = request.cookies.get("admin-auth")?.value;
   const { pathname } = request.nextUrl;
 
-  // Allow Admin Login Page
+  const authenticated = await verifyAuthToken(token);
+
+  // Admin login page
   if (pathname === "/admin/login") {
+    if (authenticated) {
+      return NextResponse.redirect(
+        new URL("/admin/orders", request.url)
+      );
+    }
+
     return NextResponse.next();
   }
-  // Redirect logged-in admin away from login page
-if (pathname === "/admin/login" && token === "logged-in") {
-  return NextResponse.redirect(
-    new URL("/admin/orders", request.url)
-  );
-}
 
   // Protect Admin Pages
   if (pathname.startsWith("/admin")) {
-    if (token !== "logged-in") {
+    if (!authenticated) {
       return NextResponse.redirect(
         new URL("/admin/login", request.url)
       );
@@ -26,30 +91,27 @@ if (pathname === "/admin/login" && token === "logged-in") {
   }
 
   // Protect Admin APIs
-  if (
+  const protectedApi =
     pathname.startsWith("/api/orders") ||
     pathname.startsWith("/api/update-order-status") ||
     pathname.startsWith("/api/settings") ||
     pathname.startsWith("/api/banners") ||
-    pathname.startsWith("/api/products/add") ||
-    pathname.startsWith("/api/products/edit") ||
-    pathname.startsWith("/api/products/delete") ||
+    pathname.startsWith("/api/add-product") ||
     pathname.startsWith("/api/upload") ||
-pathname.startsWith("/api/update-product") ||
-pathname.startsWith("/api/delete-product") ||
-pathname.startsWith("/api/restock-product")
-  ) {
-    if (token !== "logged-in") {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Unauthorized",
-        },
-        {
-          status: 401,
-        }
-      );
-    }
+    pathname.startsWith("/api/update-product") ||
+    pathname.startsWith("/api/delete-product") ||
+    pathname.startsWith("/api/restock-product");
+
+  if (protectedApi && !authenticated) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Unauthorized",
+      },
+      {
+        status: 401,
+      }
+    );
   }
 
   return NextResponse.next();
@@ -58,16 +120,14 @@ pathname.startsWith("/api/restock-product")
 export const config = {
   matcher: [
     "/admin/:path*",
-    "/api/orders",
+    "/api/orders/:path*",
     "/api/update-order-status/:path*",
     "/api/settings/:path*",
     "/api/banners/:path*",
-    "/api/products/add/:path*",
-    "/api/products/edit/:path*",
-    "/api/products/delete/:path*",
-    "/api/upload/:path*",
+    "/api/add-product",
+    "/api/upload",
     "/api/update-product/:path*",
-"/api/delete-product/:path*",
-"/api/restock-product/:path*",
+    "/api/delete-product/:path*",
+    "/api/restock-product/:path*",
   ],
 };
