@@ -290,11 +290,17 @@ export default function Footer() {
         </div>
 
       </div>
+<div className="border-t border-gray-800 py-6 text-center text-sm text-gray-500">
+  © {new Date().getFullYear()}{" "}
+  {settings.websiteName}. All rights reserved.
 
-      <div className="border-t border-gray-800 py-6 text-center text-sm text-gray-500">
-        © {new Date().getFullYear()}{" "}
-        {settings.websiteName}. All rights reserved.
-      </div>
+  <div className="mt-2 text-sm text-gray-400">
+    Designed & Developed by{" "}
+    <span className="font-semibold text-yellow-400">
+      Aijaz Mohiud Din
+    </span>
+  </div>
+</div>
 
     </footer>
   );
