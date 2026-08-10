@@ -192,20 +192,24 @@ const handleSearchSubmit = (
     setSearchOpen(false);
   };
 
-  const menuItems = [
-    {
-      title: "Home",
-      href: "/",
-    },
-    {
-      title: "Collections",
-      href: "/#collections",
-    },
-    {
-      title: "Contact",
-      href: "/contact",
-    },
-  ];
+ const menuItems = [
+  {
+    title: "Home",
+    href: "/",
+  },
+  {
+    title: "Collections",
+    href: "/#collections",
+  },
+  {
+    title: "Track Order",
+    href: "/track-order",
+  },
+  {
+    title: "Contact",
+    href: "/contact",
+  },
+];
 
   return (
     <>

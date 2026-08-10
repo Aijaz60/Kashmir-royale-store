@@ -31,9 +31,7 @@ export async function POST(req: Request) {
           orderStatus: 1,
           total: 1,
           createdAt: 1,
-          customer: {
-            name: 1,
-          },
+          "customer.name": 1,
           cart: 1,
         },
       }
