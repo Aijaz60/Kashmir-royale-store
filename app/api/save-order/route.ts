@@ -41,22 +41,27 @@ export async function POST(req: Request) {
 
     const client = await clientPromise;
     const db = client.db("kashmir-shawls");
+const orderId =
+  order.orderId ||
+  `KR-${new Date().getFullYear()}-${Date.now()}`;
 
-    const result = await db.collection("orders").insertOne({
-      ...order,
+const result = await db.collection("orders").insertOne({
+  ...order,
 
-      paymentMethod:
-        order.paymentMethod || "Razorpay",
+  orderId,
 
-      paymentStatus:
-        order.paymentStatus || "Paid",
+  paymentMethod:
+    order.paymentMethod || "Razorpay",
 
-      orderStatus:
-        order.orderStatus || "Pending",
+  paymentStatus:
+    order.paymentStatus || "Paid",
 
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+  orderStatus:
+    order.orderStatus || "Pending",
+
+  createdAt: new Date(),
+  updatedAt: new Date(),
+});
 
     // Update Inventory
     for (const item of order.cart) {
@@ -141,12 +146,12 @@ export async function POST(req: Request) {
       }
     }
 
-    return NextResponse.json({
-      success: true,
-      insertedId: result.insertedId,
-      message:
-        "Order saved successfully",
-    });
+   return NextResponse.json({
+  success: true,
+  insertedId: result.insertedId,
+  orderId,
+  message: "Order saved successfully",
+});
   } catch (error) {
     console.error(
       "SAVE ORDER ERROR:",

@@ -132,7 +132,7 @@ export default function CheckoutPage() {
       };
     });
 
-  const generateInvoice = async () => {
+  const generateInvoice = async (orderId: string) => {
     const doc = new jsPDF();
 
     const logo =
@@ -245,16 +245,22 @@ export default function CheckoutPage() {
 
     doc.setFontSize(11);
 
-    doc.text(
-      `Invoice No: INV-${Date.now()}`,
-      15,
-      48
-    );
+   doc.text(
+  `Order ID: ${orderId}`,
+  15,
+  48
+);
+
+doc.text(
+  `Invoice No: INV-${Date.now()}`,
+  15,
+  55
+);
 
     doc.text(
       `Date: ${new Date().toLocaleDateString()}`,
       15,
-      55
+      62
     );
 
     doc.setFont(
@@ -475,7 +481,8 @@ export default function CheckoutPage() {
           saveResponse.ok &&
           saveResult.success
         ) {
-          await generateInvoice();
+         await generateInvoice(saveResult.orderId);
+
 
           clearCart();
 
@@ -554,9 +561,8 @@ export default function CheckoutPage() {
           order.id,
 
         handler:
-          async function (
-            paymentResponse
-          ) {
+          async function ( paymentResponse )
+           {
             try {
               const verifyResponse =
                 await fetch(
@@ -646,7 +652,9 @@ export default function CheckoutPage() {
                 saveResponse.ok &&
                 saveResult.success
               ) {
-                await generateInvoice();
+                await generateInvoice(
+  paymentResponse.razorpay_order_id
+);
 
                 clearCart();
 
