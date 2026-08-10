@@ -92,15 +92,16 @@ export async function middleware(request: NextRequest) {
 
   // Protect Admin APIs
   const protectedApi =
-    pathname.startsWith("/api/orders") ||
-    pathname.startsWith("/api/update-order-status") ||
-    pathname.startsWith("/api/settings") ||
-    pathname.startsWith("/api/banners") ||
-    pathname.startsWith("/api/add-product") ||
-    pathname.startsWith("/api/upload") ||
-    pathname.startsWith("/api/update-product") ||
-    pathname.startsWith("/api/delete-product") ||
-    pathname.startsWith("/api/restock-product");
+  pathname.startsWith("/api/orders") ||
+  pathname.startsWith("/api/update-order-status") ||
+  pathname.startsWith("/api/settings") ||
+  (pathname.startsWith("/api/banners") &&
+    pathname !== "/api/banners/active") ||
+  pathname.startsWith("/api/add-product") ||
+  pathname.startsWith("/api/upload") ||
+  pathname.startsWith("/api/update-product") ||
+  pathname.startsWith("/api/delete-product") ||
+  pathname.startsWith("/api/restock-product");
 
   if (protectedApi && !authenticated) {
     return NextResponse.json(

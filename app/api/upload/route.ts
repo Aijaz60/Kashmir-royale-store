@@ -97,17 +97,20 @@ export async function POST(req: Request) {
       success: true,
       url: result.secure_url,
     });
-  } catch (error) {
-    console.error(error);
+ } catch (error) {
+  console.error("CLOUDINARY UPLOAD ERROR:", error);
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Upload failed",
-      },
-      {
-        status: 500,
-      }
-    );
-  }
+  return NextResponse.json(
+    {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : String(error),
+    },
+    {
+      status: 500,
+    }
+  );
+}
 }
