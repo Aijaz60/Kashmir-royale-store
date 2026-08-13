@@ -1,24 +1,54 @@
 import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
-import type { UploadApiErrorResponse, UploadApiResponse } from "cloudinary";
+import type {
+  UploadApiErrorResponse,
+  UploadApiResponse,
+} from "cloudinary";
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
-  api_key: process.env.CLOUDINARY_API_KEY!,
-  api_secret: process.env.CLOUDINARY_API_SECRET!,
-});
+export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   try {
-    const formData = await req.formData();
+    // Read environment variables at runtime
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+    const apiKey = process.env.CLOUDINARY_API_KEY;
+    const apiSecret = process.env.CLOUDINARY_API_SECRET;
 
+    console.log("[CLOUDINARY UPLOAD CONFIG]", {
+      cloudNameExists: !!cloudName,
+      apiKeyExists: !!apiKey,
+      apiKeyLength: apiKey?.length || 0,
+      apiSecretExists: !!apiSecret,
+      apiSecretLength: apiSecret?.length || 0,
+    });
+
+    if (!cloudName || !apiKey || !apiSecret) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Cloudinary environment variables are missing.",
+        },
+        {
+          status: 500,
+        }
+      );
+    }
+
+    // Configure Cloudinary at request runtime
+    cloudinary.config({
+      cloud_name: cloudName,
+      api_key: apiKey,
+      api_secret: apiSecret,
+    });
+
+    const formData = await req.formData();
     const file = formData.get("file");
 
     if (!(file instanceof File)) {
       return NextResponse.json(
         {
           success: false,
-          error: "No file uploaded",
+          error: "No file uploaded.",
         },
         {
           status: 400,
@@ -37,8 +67,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           success: false,
-          error:
-            "Only JPG, JPEG, PNG and WEBP images are allowed.",
+          error: "Only JPG, JPEG, PNG and WEBP images are allowed.",
         },
         {
           status: 400,
@@ -79,9 +108,7 @@ export async function POST(req: Request) {
 
               if (!uploadResult) {
                 reject(
-                  new Error(
-                    "Cloudinary upload returned no result."
-                  )
+                  new Error("Cloudinary upload returned no result.")
                 );
                 return;
               }
@@ -93,24 +120,29 @@ export async function POST(req: Request) {
       }
     );
 
+    console.log("[CLOUDINARY UPLOAD SUCCESS]", {
+      publicId: result.public_id,
+      urlExists: !!result.secure_url,
+    });
+
     return NextResponse.json({
       success: true,
       url: result.secure_url,
     });
- } catch (error) {
-  console.error("CLOUDINARY UPLOAD ERROR:", error);
+  } catch (error) {
+    console.error("[CLOUDINARY UPLOAD ERROR]", error);
 
-  return NextResponse.json(
-    {
-      success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : String(error),
-    },
-    {
-      status: 500,
-    }
-  );
-}
+    return NextResponse.json(
+      {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : String(error),
+      },
+      {
+        status: 500,
+      }
+    );
+  }
 }
