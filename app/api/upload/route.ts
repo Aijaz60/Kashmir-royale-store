@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   try {
-    // Read environment variables at runtime
+    // Read environment variables at RUNTIME
     const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
     const apiKey = process.env.CLOUDINARY_API_KEY;
     const apiSecret = process.env.CLOUDINARY_API_SECRET;
@@ -17,8 +17,8 @@ export async function POST(req: Request) {
     console.log("[CLOUDINARY UPLOAD CONFIG]", {
       cloudNameExists: !!cloudName,
       apiKeyExists: !!apiKey,
-      apiKeyLength: apiKey?.length || 0,
       apiSecretExists: !!apiSecret,
+      apiKeyLength: apiKey?.length || 0,
       apiSecretLength: apiSecret?.length || 0,
     });
 
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Configure Cloudinary at request runtime
+    // Configure Cloudinary INSIDE the request
     cloudinary.config({
       cloud_name: cloudName,
       api_key: apiKey,
@@ -42,6 +42,7 @@ export async function POST(req: Request) {
     });
 
     const formData = await req.formData();
+
     const file = formData.get("file");
 
     if (!(file instanceof File)) {
@@ -96,6 +97,7 @@ export async function POST(req: Request) {
           .upload_stream(
             {
               folder: "kashmir-royale",
+              resource_type: "image",
             },
             (
               error: UploadApiErrorResponse | undefined,
@@ -108,7 +110,7 @@ export async function POST(req: Request) {
 
               if (!uploadResult) {
                 reject(
-                  new Error("Cloudinary upload returned no result.")
+                  new Error("Cloudinary returned no upload result.")
                 );
                 return;
               }
