@@ -987,6 +987,113 @@ useEffect(() => {
                     <XCircle className="h-5 w-5" />
                     Cancel Order
                   </button>
+                    {selectedOrder.paymentMethod
+                      ?.toLowerCase()
+                      .includes("cash on delivery") &&
+                      selectedOrder.paymentStatus !== "Paid" && (
+                        <button
+                          disabled={
+                            updatingId ===
+                            selectedOrder._id
+                          }
+                          onClick={async () => {
+                            const confirmed =
+                              window.confirm(
+                                "Confirm that the COD payment has been received from the customer?"
+                              );
+
+                            if (!confirmed) {
+                              return;
+                            }
+
+                            try {
+                              setUpdatingId(
+                                selectedOrder._id
+                              );
+
+                              const response =
+                                await fetch(
+                                  `/api/update-order-status/${selectedOrder._id}`,
+                                  {
+                                    method: "PUT",
+
+                                    headers: {
+                                      "Content-Type":
+                                        "application/json",
+                                    },
+
+                                    body: JSON.stringify({
+                                      paymentStatus:
+                                        "Paid",
+
+                                      paymentMethod:
+                                        "Cash on Delivery",
+                                    }),
+                                  }
+                                );
+
+                              const result =
+                                await response.json();
+
+                              if (
+                                response.ok &&
+                                result.success
+                              ) {
+                                const updatedOrder =
+                                  result.order;
+
+                                setOrders((prev) =>
+                                  prev.map(
+                                    (order) =>
+                                      order._id ===
+                                      selectedOrder._id
+                                        ? {
+                                            ...order,
+                                            paymentStatus:
+                                              "Paid",
+                                            paymentMethod:
+                                              "Cash on Delivery",
+                                          }
+                                        : order
+                                  )
+                                );
+
+                                setSelectedOrder({
+                                  ...selectedOrder,
+
+                                  paymentStatus:
+                                    "Paid",
+
+                                  paymentMethod:
+                                    "Cash on Delivery",
+                                });
+
+                                alert(
+                                  "COD payment marked as Paid successfully."
+                                );
+                              } else {
+                                alert(
+                                  result.error ||
+                                    "Unable to update payment status."
+                                );
+                              }
+                            } catch (error) {
+                              console.error(
+                                error
+                              );
+
+                              alert(
+                                "Unable to update payment status."
+                              );
+                            } finally {
+                              setUpdatingId("");
+                            }
+                          }}
+                          className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                        >
+                          ?? Mark Payment Received
+                        </button>
+                      )}
 
                   <div className="ml-auto">
 
