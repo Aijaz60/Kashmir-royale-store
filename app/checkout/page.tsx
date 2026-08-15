@@ -143,7 +143,11 @@ const [qrPaymentStatus, setQrPaymentStatus] =
       };
     });
 
-  const generateInvoice = async (orderId: string) => {
+  const generateInvoice = async (
+  orderId: string,
+  paymentMethod: string,
+  paymentStatus: string
+) => {
     const doc = new jsPDF();
 
     const logo =
@@ -273,6 +277,22 @@ doc.text(
       15,
       62
     );
+    doc.setFont(
+  "helvetica",
+  "bold"
+);
+
+doc.text(
+  `Payment Method: ${paymentMethod}`,
+  15,
+  69
+);
+
+doc.text(
+  `Payment Status: ${paymentStatus}`,
+  15,
+  76
+);
 
     doc.setFont(
       "helvetica",
@@ -284,7 +304,7 @@ doc.text(
     doc.text(
       "Customer Details",
       15,
-      72
+      88
     );
 
     doc.setFont(
@@ -454,7 +474,11 @@ doc.text(
           qrCompletedRef.current = true;
           stopped = true;
 
-          await generateInvoice(qrOrderId);
+          await generateInvoice(
+  qrOrderId,
+  "UPI / Bank Transfer",
+  "Paid"
+);
           clearCart();
           router.push("/success");
         }
@@ -557,8 +581,10 @@ doc.text(
           saveResult.success
         ) {
           await generateInvoice(
-            saveResult.orderId
-          );
+  saveResult.orderId,
+  "Cash on Delivery",
+  "Pending"
+);
           clearCart();
           router.push("/success");
         } else {
@@ -798,9 +824,12 @@ doc.text(
               saveResponse.ok &&
               saveResult.success
             ) {
+              
               await generateInvoice(
-                paymentResponse.razorpay_order_id
-              );
+  paymentResponse.razorpay_order_id,
+  "Razorpay",
+  "Paid"
+);
               clearCart();
               router.push("/success");
             } else {
