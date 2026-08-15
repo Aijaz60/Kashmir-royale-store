@@ -1,10 +1,10 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { useRouter } from "next/navigation";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { CartContext } from "../context/CartContext";
 
 interface CartItem {
@@ -88,7 +88,18 @@ export default function CheckoutPage() {
     useState("");
 
   const [paymentMethod, setPaymentMethod] =
+
     useState("razorpay");
+const [qrImageUrl, setQrImageUrl] =
+  useState("");
+
+const [qrOrderId, setQrOrderId] =
+  useState("");
+
+const [qrPaymentStatus, setQrPaymentStatus] =
+  useState("Pending");
+
+  const qrCompletedRef = useRef(false);
 
   const cartItems = cart as CartItem[];
 
@@ -402,6 +413,86 @@ doc.text(
     );
   };
 
+  useEffect(() => {
+    if (!qrOrderId || !phone || qrPaymentStatus === "Paid") {
+      return;
+    }
+
+    let stopped = false;
+
+    const checkPayment = async () => {
+      try {
+        const response = await fetch(
+          "/api/track-order",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              orderId: qrOrderId,
+              phone,
+            }),
+          }
+        );
+
+        if (!response.ok || stopped) {
+          return;
+        }
+
+        const result = await response.json();
+        const status = String(
+          result.paymentStatus || "Pending"
+        );
+
+        setQrPaymentStatus(status);
+
+        if (
+          status.toLowerCase() === "paid" &&
+          !qrCompletedRef.current
+        ) {
+          qrCompletedRef.current = true;
+          stopped = true;
+
+          await generateInvoice(qrOrderId);
+          clearCart();
+          router.push("/success");
+        }
+      } catch (error) {
+        console.error(
+          "QR PAYMENT CHECK ERROR:",
+          error
+        );
+      }
+    };
+
+    checkPayment();
+    const interval = window.setInterval(
+      checkPayment,
+      3000
+    );
+
+    return () => {
+      stopped = true;
+      window.clearInterval(interval);
+    };
+  }, [
+    qrOrderId,
+    phone,
+    qrPaymentStatus,
+    clearCart,
+    router,
+  ]);
+
+  useEffect(() => {
+    if (paymentMethod !== "upi") {
+      setQrImageUrl("");
+      setQrOrderId("");
+      setQrPaymentStatus("Pending");
+      qrCompletedRef.current = false;
+    }
+  }, [paymentMethod]);
+
   const handlePayment = async () => {
     if (
       !name ||
@@ -415,67 +506,48 @@ doc.text(
       alert(
         "Please fill in all customer details."
       );
-
       return;
     }
 
     if (cartItems.length === 0) {
-      alert(
-        "Your cart is empty."
-      );
-
+      alert("Your cart is empty.");
       return;
     }
 
     /*
      * Cash on Delivery
      */
-   if (
-  paymentMethod === "cod" ||
-  paymentMethod === "upi"
-) {
+    if (paymentMethod === "cod") {
       setLoading(true);
 
       try {
-        const saveResponse =
-          await fetch(
-            "/api/save-order",
-            {
-              method: "POST",
-
-              headers: {
-                "Content-Type":
-                  "application/json",
+        const saveResponse = await fetch(
+          "/api/save-order",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            body: JSON.stringify({
+              customer: {
+                name,
+                email,
+                phone,
+                address,
+                city,
+                state,
+                pincode,
               },
-
-              body: JSON.stringify({
-                customer: {
-                  name,
-                  email,
-                  phone,
-                  address,
-                  city,
-                  state,
-                  pincode,
-                },
-
-                cart: cartItems,
-
-                total: grandTotal,
-
-               paymentMethod:
-  paymentMethod === "upi"
-    ? "UPI / Bank Transfer"
-    : "Cash on Delivery",
-
-                paymentStatus:
-                  "Pending",
-
-                orderStatus:
-                  "Pending",
-              }),
-            }
-          );
+              cart: cartItems,
+              total: grandTotal,
+              paymentMethod:
+                "Cash on Delivery",
+              paymentStatus: "Pending",
+              orderStatus: "Pending",
+            }),
+          }
+        );
 
         const saveResult =
           await saveResponse.json();
@@ -484,27 +556,17 @@ doc.text(
           saveResponse.ok &&
           saveResult.success
         ) {
-         await generateInvoice(saveResult.orderId);
-
-
-          clearCart();
-
-          router.push(
-            "/success"
+          await generateInvoice(
+            saveResult.orderId
           );
+          clearCart();
+          router.push("/success");
         } else {
-         alert(
-  paymentMethod === "upi"
-    ? "Failed to save UPI / Bank Transfer order."
-    : "Failed to save COD order."
-);
+          alert("Failed to save COD order.");
         }
       } catch (error) {
         console.error(error);
-
-        alert(
-          "Something went wrong."
-        );
+        alert("Something went wrong.");
       } finally {
         setLoading(false);
       }
@@ -513,36 +575,143 @@ doc.text(
     }
 
     /*
-     * Razorpay Payment
+     * Razorpay Dynamic UPI QR
      */
-    setLoading(true);
+    if (paymentMethod === "upi") {
+      setLoading(true);
+      qrCompletedRef.current = false;
+      setQrImageUrl("");
+      setQrOrderId("");
+      setQrPaymentStatus("Pending");
 
-    try {
-      const response =
-        await fetch(
-          "/api/create-order",
+      try {
+        /*
+         * 1. Create the website order first.
+         */
+        const saveResponse = await fetch(
+          "/api/save-order",
           {
             method: "POST",
-
             headers: {
               "Content-Type":
                 "application/json",
             },
-
             body: JSON.stringify({
-              amount: grandTotal,
+              customer: {
+                name,
+                email,
+                phone,
+                address,
+                city,
+                state,
+                pincode,
+              },
+              cart: cartItems,
+              total: grandTotal,
+              paymentMethod:
+                "Razorpay UPI QR",
+              paymentStatus: "Pending",
+              orderStatus: "Pending",
             }),
           }
         );
 
-      const order =
-        await response.json();
+        const saveResult =
+          await saveResponse.json();
+
+        if (
+          !saveResponse.ok ||
+          !saveResult.success
+        ) {
+          alert(
+            saveResult.error ||
+              "Failed to create order."
+          );
+          setLoading(false);
+          return;
+        }
+
+        /*
+         * 2. Ask Razorpay to create a fixed-amount
+         * single-use QR for this exact order.
+         */
+        const qrResponse = await fetch(
+          "/api/create-qr",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            body: JSON.stringify({
+              amount: grandTotal,
+              orderId: saveResult.orderId,
+            }),
+          }
+        );
+
+        const qrResult =
+          await qrResponse.json();
+
+        if (
+          !qrResponse.ok ||
+          !qrResult.success ||
+          !qrResult.imageUrl
+        ) {
+          alert(
+            qrResult.error ||
+              "Failed to create payment QR."
+          );
+          setLoading(false);
+          return;
+        }
+
+        /*
+         * 3. Show QR and start webhook-status polling.
+         */
+        setQrOrderId(saveResult.orderId);
+        setQrImageUrl(qrResult.imageUrl);
+        setQrPaymentStatus("Pending");
+        setLoading(false);
+      } catch (error) {
+        console.error(
+          "UPI QR ERROR:",
+          error
+        );
+        alert(
+          "Something went wrong while creating the QR payment."
+        );
+        setLoading(false);
+      }
+
+      return;
+    }
+
+    /*
+     * Razorpay Checkout
+     */
+    setLoading(true);
+
+    try {
+      const response = await fetch(
+        "/api/create-order",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            amount: grandTotal,
+          }),
+        }
+      );
+
+      const order = await response.json();
 
       if (order.error) {
         alert(order.error);
-
         setLoading(false);
-
         return;
       }
 
@@ -550,143 +719,103 @@ doc.text(
         key:
           process.env
             .NEXT_PUBLIC_RAZORPAY_KEY_ID,
-
         amount: order.amount,
+        currency: order.currency,
+        name: "Kashmir Royale",
+        description: "Order Payment",
+        order_id: order.id,
 
-        currency:
-          order.currency,
-
-        name:
-          "Kashmir Royale",
-
-        description:
-          "Order Payment",
-
-        order_id:
-          order.id,
-
-        handler:
-          async function ( paymentResponse )
-           {
-            try {
-              const verifyResponse =
-                await fetch(
-                  "/api/verify-payment",
-                  {
-                    method: "POST",
-
-                    headers: {
-                      "Content-Type":
-                        "application/json",
-                    },
-
-                    body: JSON.stringify({
-                      razorpay_order_id:
-                        paymentResponse.razorpay_order_id,
-
-                      razorpay_payment_id:
-                        paymentResponse.razorpay_payment_id,
-
-                      razorpay_signature:
-                        paymentResponse.razorpay_signature,
-                    }),
-                  }
-                );
-
-              const verifyResult =
-                await verifyResponse.json();
-
-              if (
-                !verifyResult.success
-              ) {
-                alert(
-                  "❌ Payment Verification Failed"
-                );
-
-                return;
-              }
-
-              const saveResponse =
-                await fetch(
-                  "/api/save-order",
-                  {
-                    method: "POST",
-
-                    headers: {
-                      "Content-Type":
-                        "application/json",
-                    },
-
-                    body: JSON.stringify({
-                      customer: {
-                        name,
-                        email,
-                        phone,
-                        address,
-                        city,
-                        state,
-                        pincode,
-                      },
-
-                      cart: cartItems,
-
-                      total: grandTotal,
-
-                      paymentId:
-                        paymentResponse.razorpay_payment_id,
-
-                      orderId:
-                        paymentResponse.razorpay_order_id,
-
-                      paymentMethod:
-                        "Razorpay",
-
-                      paymentStatus:
-                        "Paid",
-
-                      orderStatus:
-                        "Confirmed",
-                    }),
-                  }
-                );
-
-              const saveResult =
-                await saveResponse.json();
-
-              if (
-                saveResponse.ok &&
-                saveResult.success
-              ) {
-                await generateInvoice(
-  paymentResponse.razorpay_order_id
-);
-
-                clearCart();
-
-                router.push(
-                  "/success"
-                );
-              } else {
-                alert(
-                  "❌ Save Order Failed"
-                );
-
-                alert(
-                  JSON.stringify(
-                    saveResult
-                  )
-                );
-              }
-            } catch (error) {
-              console.error(
-                error
+        handler: async function (
+          paymentResponse
+        ) {
+          try {
+            const verifyResponse =
+              await fetch(
+                "/api/verify-payment",
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type":
+                      "application/json",
+                  },
+                  body: JSON.stringify({
+                    razorpay_order_id:
+                      paymentResponse.razorpay_order_id,
+                    razorpay_payment_id:
+                      paymentResponse.razorpay_payment_id,
+                    razorpay_signature:
+                      paymentResponse.razorpay_signature,
+                  }),
+                }
               );
 
+            const verifyResult =
+              await verifyResponse.json();
+
+            if (!verifyResult.success) {
               alert(
-                "Something went wrong while saving the order."
+                "❌ Payment Verification Failed"
+              );
+              return;
+            }
+
+            const saveResponse =
+              await fetch(
+                "/api/save-order",
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type":
+                      "application/json",
+                  },
+                  body: JSON.stringify({
+                    customer: {
+                      name,
+                      email,
+                      phone,
+                      address,
+                      city,
+                      state,
+                      pincode,
+                    },
+                    cart: cartItems,
+                    total: grandTotal,
+                    paymentId:
+                      paymentResponse.razorpay_payment_id,
+                    orderId:
+                      paymentResponse.razorpay_order_id,
+                    paymentMethod: "Razorpay",
+                    paymentStatus: "Paid",
+                    orderStatus: "Confirmed",
+                  }),
+                }
+              );
+
+            const saveResult =
+              await saveResponse.json();
+
+            if (
+              saveResponse.ok &&
+              saveResult.success
+            ) {
+              await generateInvoice(
+                paymentResponse.razorpay_order_id
+              );
+              clearCart();
+              router.push("/success");
+            } else {
+              alert("❌ Save Order Failed");
+              alert(
+                JSON.stringify(saveResult)
               );
             }
-          },
+          } catch (error) {
+            console.error(error);
+            alert(
+              "Something went wrong while saving the order."
+            );
+          }
+        },
 
         prefill: {
           name,
@@ -700,18 +829,12 @@ doc.text(
       };
 
       const razorpay =
-        new window.Razorpay(
-          options
-        );
+        new window.Razorpay(options);
 
       razorpay.open();
     } catch (error) {
       console.error(error);
-
-      alert(
-        "Something went wrong."
-      );
-
+      alert("Something went wrong.");
       setLoading(false);
     }
   };
@@ -996,9 +1119,57 @@ doc.text(
 
               </div>
 
+              {paymentMethod === "upi" && qrImageUrl && (
+                <div className="mt-8 rounded-2xl border-2 border-yellow-400 bg-yellow-50 p-6 text-center shadow-sm">
+                  <h3 className="text-2xl font-bold text-gray-900">
+                    Scan & Pay
+                  </h3>
+
+                  <p className="mt-2 text-gray-600">
+                    Scan this QR with any UPI app and pay the exact amount.
+                  </p>
+
+                  <div className="mx-auto mt-5 flex w-fit rounded-2xl bg-white p-4 shadow">
+                    <img
+                      src={qrImageUrl}
+                      alt="Razorpay UPI payment QR code"
+                      className="h-64 w-64 object-contain"
+                    />
+                  </div>
+
+                  <p className="mt-4 text-lg font-bold">
+                    Amount: ₹{grandTotal}
+                  </p>
+
+                  <p className="mt-1 break-all text-sm text-gray-500">
+                    Order ID: {qrOrderId}
+                  </p>
+
+                  <div className="mt-5 rounded-xl bg-white p-4">
+                    <p className="font-semibold text-gray-900">
+                      Payment Status
+                    </p>
+                    <p
+                      className={`mt-2 text-lg font-bold ${
+                        qrPaymentStatus.toLowerCase() === "paid"
+                          ? "text-green-600"
+                          : "text-amber-600"
+                      }`}
+                    >
+                      {qrPaymentStatus.toLowerCase() === "paid"
+                        ? "✅ Paid"
+                        : "⏳ Waiting for payment..."}
+                    </p>
+                    <p className="mt-1 text-xs text-gray-500">
+                      This page checks the payment automatically. Please keep this page open after scanning.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <button
                 onClick={handlePayment}
-                disabled={loading}
+                disabled={loading || (paymentMethod === "upi" && !!qrImageUrl)}
                 className="mt-8 w-full rounded-xl bg-yellow-500 py-4 font-bold transition hover:bg-yellow-400 disabled:opacity-50"
               >
                 {loading
