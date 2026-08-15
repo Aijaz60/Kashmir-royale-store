@@ -84,21 +84,21 @@ export default function Hero() {
   return (
     <section className="relative w-full overflow-hidden bg-black">
 
-      {/* FULL BANNER IMAGE */}
-      <div className="relative w-full">
-        <a
-          href={banner.buttonLink || "#collections"}
-          className="block w-full"
-          aria-label={banner.buttonText || banner.title}
-        >
-          <img
-            src={banner.image}
-            alt={banner.title || "Kashmir Royale Banner"}
-            className="block h-auto w-full object-contain"
-            loading="eager"
-          />
-        </a>
-      </div>
+     {/* FULL BANNER IMAGE */}
+<div className="relative w-full aspect-[2/1] overflow-hidden">
+  <a
+    href={banner.buttonLink || "#collections"}
+    className="absolute inset-0 block w-full h-full"
+    aria-label={banner.buttonText || banner.title}
+  >
+    <img
+      src={banner.image}
+      alt={banner.title || "Kashmir Royale Banner"}
+      className="absolute inset-0 w-full h-full object-contain"
+      loading="eager"
+    />
+  </a>
+</div>
 
       {/* PREVIOUS BUTTON */}
       {banners.length > 1 && (

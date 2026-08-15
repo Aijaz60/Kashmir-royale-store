@@ -430,9 +430,10 @@ doc.text(
     /*
      * Cash on Delivery
      */
-    if (
-      paymentMethod === "cod"
-    ) {
+   if (
+  paymentMethod === "cod" ||
+  paymentMethod === "upi"
+) {
       setLoading(true);
 
       try {
@@ -462,8 +463,10 @@ doc.text(
 
                 total: grandTotal,
 
-                paymentMethod:
-                  "Cash on Delivery",
+               paymentMethod:
+  paymentMethod === "upi"
+    ? "UPI / Bank Transfer"
+    : "Cash on Delivery",
 
                 paymentStatus:
                   "Pending",
@@ -490,9 +493,11 @@ doc.text(
             "/success"
           );
         } else {
-          alert(
-            "Failed to save COD order."
-          );
+         alert(
+  paymentMethod === "upi"
+    ? "Failed to save UPI / Bank Transfer order."
+    : "Failed to save COD order."
+);
         }
       } catch (error) {
         console.error(error);
@@ -857,6 +862,26 @@ doc.text(
 
                 <span>
                   💵 Cash on Delivery
+                </span>
+              </label>
+                            <label className="mt-3 flex cursor-pointer items-center gap-3">
+                <input
+                  type="radio"
+                  name="payment"
+                  value="upi"
+                  checked={
+                    paymentMethod ===
+                    "upi"
+                  }
+                  onChange={(e) =>
+                    setPaymentMethod(
+                      e.target.value
+                    )
+                  }
+                />
+
+                <span>
+                  📱 UPI / Bank Transfer
                 </span>
               </label>
 
