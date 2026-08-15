@@ -83,7 +83,8 @@ export default function Hero() {
 
   return (
     <section className="relative w-full overflow-hidden bg-black">
-      {/* BANNER IMAGE */}
+
+      {/* FULL BANNER IMAGE */}
       <div className="relative w-full">
         <a
           href={banner.buttonLink || "#collections"}
@@ -94,48 +95,89 @@ export default function Hero() {
             src={banner.image}
             alt={banner.title || "Kashmir Royale Banner"}
             className="block h-auto w-full object-contain"
+            loading="eager"
           />
         </a>
       </div>
 
-      {/* PREVIOUS */}
+      {/* PREVIOUS BUTTON */}
       {banners.length > 1 && (
         <button
           type="button"
           onClick={prevSlide}
           aria-label="Previous banner"
-          className="absolute left-2 top-1/2 z-20 -translate-y-1/2 rounded-full bg-black/60 p-3 text-white shadow-lg backdrop-blur-sm transition hover:bg-yellow-500 hover:text-black sm:left-5 sm:p-4"
+          className="
+            absolute left-2 top-1/2 z-20
+            -translate-y-1/2
+            rounded-full
+            bg-black/60
+            p-3
+            text-white
+            shadow-lg
+            backdrop-blur-sm
+            transition
+            hover:bg-yellow-500
+            hover:text-black
+            sm:left-5
+            sm:p-4
+          "
         >
           <FaChevronLeft size={18} />
         </button>
       )}
 
-      {/* NEXT */}
+      {/* NEXT BUTTON */}
       {banners.length > 1 && (
         <button
           type="button"
           onClick={nextSlide}
           aria-label="Next banner"
-          className="absolute right-2 top-1/2 z-20 -translate-y-1/2 rounded-full bg-black/60 p-3 text-white shadow-lg backdrop-blur-sm transition hover:bg-yellow-500 hover:text-black sm:right-5 sm:p-4"
+          className="
+            absolute right-2 top-1/2 z-20
+            -translate-y-1/2
+            rounded-full
+            bg-black/60
+            p-3
+            text-white
+            shadow-lg
+            backdrop-blur-sm
+            transition
+            hover:bg-yellow-500
+            hover:text-black
+            sm:right-5
+            sm:p-4
+          "
         >
           <FaChevronRight size={18} />
         </button>
       )}
 
-      {/* DOTS */}
+      {/* SLIDER DOTS */}
       {banners.length > 1 && (
-        <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 gap-2 sm:bottom-5 sm:gap-3">
+        <div
+          className="
+            absolute bottom-3 left-1/2 z-20
+            flex -translate-x-1/2
+            gap-2
+            sm:bottom-5
+            sm:gap-3
+          "
+        >
           {banners.map((_, index) => (
             <button
               key={index}
               type="button"
               onClick={() => setCurrent(index)}
               aria-label={`Go to banner ${index + 1}`}
-              className={`h-2.5 rounded-full transition-all duration-300 ${
-                current === index
-                  ? "w-8 bg-yellow-400"
-                  : "w-2.5 bg-white/70"
-              }`}
+              className={`
+                h-2.5 rounded-full
+                transition-all duration-300
+                ${
+                  current === index
+                    ? "w-8 bg-yellow-400"
+                    : "w-2.5 bg-white/70"
+                }
+              `}
             />
           ))}
         </div>
