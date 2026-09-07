@@ -1,10 +1,13 @@
 "use client";
 
 import jsPDF from "jspdf";
+
 interface CartItem {
   title?: string;
   price?: number;
   quantity?: number;
+  sku?: string;
+  hsn?: string;
 }
 
 interface Customer {
@@ -12,6 +15,9 @@ interface Customer {
   email?: string;
   phone?: string;
   address?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
 }
 
 interface Order {
@@ -24,6 +30,7 @@ interface Order {
   customer?: Customer;
   status?: string;
 }
+
 type Props = {
   order: Order;
 };
@@ -36,422 +43,589 @@ export default function DownloadInvoice({ order }: Props) {
       format: "a4",
     });
 
-    // ========= COLORS =========
+    const PAGE_WIDTH = 210;
+    const PAGE_HEIGHT = 297;
+    const LEFT = 12;
+    const RIGHT = 198;
+    const WIDTH = RIGHT - LEFT;
 
-    const GOLD: [number, number, number] = [212, 175, 55];
-    const BLACK: [number, number, number] = [30, 30, 30];
+    const BLACK: [number, number, number] = [20, 20, 20];
+    const GRAY: [number, number, number] = [85, 85, 85];
+    const BORDER: [number, number, number] = [95, 95, 95];
+    const LIGHT: [number, number, number] = [247, 247, 247];
     const WHITE: [number, number, number] = [255, 255, 255];
-    const LIGHT: [number, number, number] = [246, 246, 246];
-    const GRAY: [number, number, number] = [120, 120, 120];
-    const GREEN: [number, number, number] = [40, 167, 69];
-
-    // ========= HELPERS =========
 
     const money = (value: number) =>
-      `Rs. ${value.toLocaleString("en-IN")}`;
+      `Rs. ${Number(value || 0).toLocaleString("en-IN", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`;
 
-    let y = 20;
+    const formatDate = (value?: string) => {
+      if (!value) {
+        return new Date().toLocaleDateString("en-IN");
+      }
 
-    // ========= PAGE =========
+      const parsedDate = new Date(value);
+
+      if (Number.isNaN(parsedDate.getTime())) {
+        return new Date().toLocaleDateString("en-IN");
+      }
+
+      return parsedDate.toLocaleDateString("en-IN");
+    };
+
+    const text = (
+      value: string,
+      x: number,
+      y: number,
+      options?: {
+        size?: number;
+        bold?: boolean;
+        color?: [number, number, number];
+        align?: "left" | "center" | "right";
+      }
+    ) => {
+      doc.setFont("helvetica", options?.bold ? "bold" : "normal");
+      doc.setFontSize(options?.size || 8);
+      doc.setTextColor(...(options?.color || BLACK));
+
+      doc.text(value, x, y, {
+        align: options?.align || "left",
+      });
+    };
+
+    const drawBox = (
+      x: number,
+      y: number,
+      width: number,
+      height: number,
+      filled = false
+    ) => {
+      doc.setLineWidth(0.3);
+      doc.setDrawColor(...BORDER);
+
+      if (filled) {
+        doc.setFillColor(...LIGHT);
+        doc.rect(x, y, width, height, "FD");
+      } else {
+        doc.rect(x, y, width, height, "S");
+      }
+    };
+
+    const wrappedText = (
+      value: string,
+      x: number,
+      y: number,
+      width: number,
+      lineHeight = 4
+    ) => {
+      const lines = doc.splitTextToSize(value || "-", width);
+      doc.text(lines, x, y);
+      return lines.length * lineHeight;
+    };
+
+    const customer = order.customer || {};
+    const items = order.cart || [];
+
+    const orderNumber =
+      order.orderId || order._id || "KR-ORDER";
+
+    const invoiceNumber = `INV-${orderNumber}`;
+    const invoiceDate = formatDate(order.createdAt);
+    const orderDate = formatDate(order.createdAt);
+
+    const customerName = customer.name || "Customer";
+    const customerPhone = customer.phone || "-";
+
+    const address = [
+      customer.address,
+      customer.city,
+      customer.state || "Jammu and Kashmir",
+      customer.pincode,
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    const subtotal = items.reduce((sum, item) => {
+      return (
+        sum +
+        Number(item.price || 0) * Number(item.quantity || 0)
+      );
+    }, 0);
+
+    const grandTotal = Number(order.total ?? subtotal);
+    const shipping = Math.max(0, grandTotal - subtotal);
+
+    const paymentMethod = order.paymentId
+      ? "Online Payment"
+      : "Cash on Delivery";
+
+    const paymentStatus =
+      order.status?.toLowerCase() === "paid" ||
+      order.status?.toLowerCase() === "delivered"
+        ? "Paid"
+        : "Pending";
+
+    // =====================================================
+    // PAGE
+    // =====================================================
 
     doc.setFillColor(...WHITE);
-    doc.rect(0, 0, 210, 297, "F");
+    doc.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, "F");
 
-    // Gold Border
-    doc.setDrawColor(...GOLD);
-    doc.setLineWidth(0.8);
+    doc.setDrawColor(...BORDER);
+    doc.setLineWidth(0.4);
     doc.rect(8, 8, 194, 281);
 
-    // ========= HEADER =========
+    // =====================================================
+    // HEADER
+    // =====================================================
 
-    doc.setFillColor(...GOLD);
-    doc.rect(8, 8, 194, 28, "F");
+    text("KASHMIR ROYALE SHAWLS", LEFT, 20, {
+      size: 16,
+      bold: true,
+    });
 
-    doc.setTextColor(...BLACK);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(22);
+    text("Premium Kashmiri Handcrafted Shawls", LEFT, 27, {
+      size: 8,
+      color: GRAY,
+    });
 
-    doc.text("KASHMIR ROYALE SHAWLS", 15, 20);
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-
-    doc.text(
-      "Authentic Kashmiri Shawls • Since 1995",
-      15,
-      28
-    );
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(18);
-
-    doc.text("TAX INVOICE", 190, 20, {
+    text("INVOICE", RIGHT, 20, {
+      size: 15,
+      bold: true,
       align: "right",
     });
 
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
+    text("E. & O.E.", RIGHT, 27, {
+      size: 7,
+      color: GRAY,
+      align: "right",
+    });
 
-    doc.text(
-      new Date(order.createdAt ?? Date.now()).toLocaleDateString(),
-      190,
-      28,
+    doc.setDrawColor(...BORDER);
+    doc.line(LEFT, 34, RIGHT, 34);
+
+    // =====================================================
+    // SHIP TO / BILL TO
+    // =====================================================
+
+    let y = 40;
+
+    const addressHeight = 47;
+    const halfWidth = WIDTH / 2;
+
+    drawBox(LEFT, y, halfWidth, addressHeight);
+    drawBox(LEFT + halfWidth, y, halfWidth, addressHeight);
+
+    text("Ship To", LEFT + 4, y + 8, {
+      size: 10,
+      bold: true,
+    });
+
+    text("Bill To", LEFT + halfWidth + 4, y + 8, {
+      size: 10,
+      bold: true,
+    });
+
+    text(customerName, LEFT + 4, y + 16, {
+      size: 8,
+      bold: true,
+    });
+
+    text(customerName, LEFT + halfWidth + 4, y + 16, {
+      size: 8,
+      bold: true,
+    });
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...BLACK);
+
+    wrappedText(
+      address || "-",
+      LEFT + 4,
+      y + 23,
+      halfWidth - 8,
+      4
+    );
+
+    wrappedText(
+      address || "-",
+      LEFT + halfWidth + 4,
+      y + 23,
+      halfWidth - 8,
+      4
+    );
+
+    text(`Phone: ${customerPhone}`, LEFT + 4, y + 41, {
+      size: 8,
+      color: GRAY,
+    });
+
+    text(
+      `Phone: ${customerPhone}`,
+      LEFT + halfWidth + 4,
+      y + 41,
       {
+        size: 8,
+        color: GRAY,
+      }
+    );
+
+    // =====================================================
+    // ORDER DETAILS
+    // =====================================================
+
+    y += addressHeight;
+
+    const orderDetailsHeight = 34;
+
+    drawBox(LEFT, y, WIDTH, orderDetailsHeight);
+
+    text("Order ID", LEFT + 4, y + 8, {
+      size: 8,
+      bold: true,
+    });
+
+    text("Order Date", 72, y + 8, {
+      size: 8,
+      bold: true,
+    });
+
+    text("Invoice Date", 124, y + 8, {
+      size: 8,
+      bold: true,
+    });
+
+    text("Invoice Number", LEFT + 4, y + 23, {
+      size: 8,
+      bold: true,
+    });
+
+    text("Payment Method", 72, y + 23, {
+      size: 8,
+      bold: true,
+    });
+
+    text("Payment Status", 145, y + 23, {
+      size: 8,
+      bold: true,
+    });
+
+    text(orderNumber, LEFT + 4, y + 14, {
+      size: 8,
+    });
+
+    text(orderDate, 72, y + 14, {
+      size: 8,
+    });
+
+    text(invoiceDate, 124, y + 14, {
+      size: 8,
+    });
+
+    text(invoiceNumber, LEFT + 4, y + 29, {
+      size: 8,
+    });
+
+    text(paymentMethod, 72, y + 29, {
+      size: 8,
+    });
+
+    text(paymentStatus, 145, y + 29, {
+      size: 8,
+      bold: true,
+      color:
+        paymentStatus === "Paid"
+          ? [35, 125, 55]
+          : [170, 95, 20],
+    });
+
+    // =====================================================
+    // SELLER DETAILS
+    // =====================================================
+
+    y += orderDetailsHeight;
+
+    const sellerHeight = 32;
+
+    drawBox(LEFT, y, WIDTH, sellerHeight);
+
+    text("Sold By:", LEFT + 4, y + 8, {
+      size: 8,
+      bold: true,
+    });
+
+    text("Kashmir Royale Shawls", LEFT + 4, y + 15, {
+      size: 8,
+    });
+
+    text("Ship-from Address:", LEFT + 4, y + 23, {
+      size: 8,
+      bold: true,
+    });
+
+    text("Srinagar, Jammu & Kashmir, India", LEFT + 4, y + 29, {
+      size: 8,
+    });
+
+    text("Total Items:", 145, y + 8, {
+      size: 8,
+      bold: true,
+    });
+
+    text(String(items.length), 178, y + 8, {
+      size: 8,
+    });
+
+    // =====================================================
+    // PRODUCT TABLE
+    // =====================================================
+
+    y += sellerHeight + 8;
+
+    const productWidth = 104;
+    const quantityWidth = 18;
+    const priceWidth = 30;
+    const totalWidth = 34;
+
+    const headerHeight = 16;
+
+    drawBox(LEFT, y, WIDTH, headerHeight, true);
+
+    text("Product Title", LEFT + 4, y + 6, {
+      size: 8,
+      bold: true,
+    });
+
+    text("Qty", LEFT + productWidth + quantityWidth / 2, y + 9, {
+      size: 8,
+      bold: true,
+      align: "center",
+    });
+
+    text(
+      "Price",
+      LEFT + productWidth + quantityWidth + priceWidth - 4,
+      y + 9,
+      {
+        size: 8,
+        bold: true,
         align: "right",
       }
     );
 
-    y = 48;
-
-    // ==========================
-    // CUSTOMER DETAILS
-    // ==========================
-
-    doc.setFillColor(...LIGHT);
-    doc.roundedRect(12, y, 88, 48, 3, 3, "F");
-
-    doc.setTextColor(...BLACK);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
-
-    doc.text("CUSTOMER DETAILS", 16, y + 8);
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-
-    doc.text(
-      `Name: ${order.customer?.name || "Customer"}`,
-      16,
-      y + 18
-    );
-
-    doc.text(
-      `Email: ${order.customer?.email || "-"}`,
-      16,
-      y + 26
-    );
-
-    doc.text(
-      `Phone: ${order.customer?.phone || "-"}`,
-      16,
-      y + 34
-    );
-
-    const address =
-      order.customer?.address || "Address not available";
-
-    const addressLines = doc.splitTextToSize(address, 78);
-
-    doc.text(addressLines, 16, y + 42);
-
-    // ==========================
-    // PAYMENT DETAILS
-    // ==========================
-
-    doc.setFillColor(...LIGHT);
-    doc.roundedRect(110, y, 88, 48, 3, 3, "F");
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
-
-    doc.text("PAYMENT DETAILS", 114, y + 8);
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-
-    doc.text(
-      `Invoice: INV-${order.orderId ?? "-"}`,
-      114,
-      y + 18
-    );
-
-    doc.text(
-      `Order ID: ${order.orderId ?? "-"}`,
-      114,
-      y + 26
-    );
-
-    doc.text(
-      `Payment ID: ${order.paymentId ?? "-"}`,
-      114,
-      y + 34
-    );
-
-    // Paid Badge
-    doc.setFillColor(...GREEN);
-    doc.roundedRect(148, y + 38, 42, 8, 2, 2, "F");
-
-    doc.setTextColor(...WHITE);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
-
-    doc.text("PAID", 169, y + 43.5, {
-      align: "center",
-    });
-
-    // Reset Text Color
-    doc.setTextColor(...BLACK);
-
-    y += 60;
-
-    // ==========================
-    // PRODUCTS TABLE
-    // ==========================
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
-    doc.setTextColor(...BLACK);
-
-    doc.text("ORDER ITEMS", 12, y);
-
-    y += 8;
-
-    // Table Header
-    doc.setFillColor(...GOLD);
-    doc.roundedRect(12, y, 186, 10, 2, 2, "F");
-
-    doc.setTextColor(...BLACK);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
-
-    doc.text("Product", 16, y + 6.5);
-    doc.text("Qty", 122, y + 6.5);
-    doc.text("Price", 145, y + 6.5);
-    doc.text("Total", 188, y + 6.5, {
+    text("Total", RIGHT - 4, y + 9, {
+      size: 8,
+      bold: true,
       align: "right",
     });
 
-    y += 12;
+    y += headerHeight;
 
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
+    items.forEach((item, index) => {
+      const quantity = Number(item.quantity || 0);
+      const price = Number(item.price || 0);
+      const lineTotal = quantity * price;
 
-    (order.cart ?? []).forEach((item: CartItem, index: number) => {
-      if (index % 2 === 0) {
-        doc.setFillColor(248, 248, 248);
-      } else {
-        doc.setFillColor(255, 255, 255);
+      const productTitle = item.title || "Kashmiri Shawl";
+
+      const productLines = doc.splitTextToSize(
+        productTitle,
+        productWidth - 8
+      );
+
+      const rowHeight = Math.max(
+        18,
+        productLines.length * 4 + 8
+      );
+
+      doc.setFillColor(...(index % 2 === 0 ? WHITE : LIGHT));
+      doc.setDrawColor(...BORDER);
+      doc.rect(LEFT, y, WIDTH, rowHeight, "FD");
+
+      text(productLines[0] || "Kashmiri Shawl", LEFT + 4, y + 7, {
+        size: 8,
+      });
+
+      if (productLines.length > 1) {
+        text(productLines[1], LEFT + 4, y + 12, {
+          size: 7,
+          color: GRAY,
+        });
       }
 
-      doc.roundedRect(12, y - 4, 186, 10, 1, 1, "F");
-
-      const lineTotal =
-        (item.price ?? 0) * (item.quantity ?? 0);
-
-      doc.setTextColor(...BLACK);
-
-      const title = item.title ?? "";
-
-      doc.text(
-        title.length > 40
-          ? title.substring(0, 40) + "..."
-          : title,
-        16,
-        y + 2
-      );
-
-      doc.text(
-        String(item.quantity ?? 0),
-        124,
-        y + 2
-      );
-
-      doc.text(
-        money(item.price ?? 0),
-        145,
-        y + 2
-      );
-
-      doc.setFont("helvetica", "bold");
-
-      doc.text(
-        money(lineTotal),
-        188,
-        y + 2,
+      text(
+        String(quantity),
+        LEFT + productWidth + quantityWidth / 2,
+        y + 9,
         {
+          size: 8,
+          align: "center",
+        }
+      );
+
+      text(
+        money(price),
+        LEFT + productWidth + quantityWidth + priceWidth - 4,
+        y + 9,
+        {
+          size: 8,
           align: "right",
         }
       );
 
-      doc.setFont("helvetica", "normal");
-
-      y += 12;
-    });
-
-    y += 8;
-
-    // ==========================
-    // ORDER SUMMARY
-    // ==========================
-const subtotal = (order.cart ?? []).reduce(
-  (sum, item) =>
-    sum + (item.price ?? 0) * (item.quantity ?? 0),
-  0
-);
- const shipping = Math.max(
-      0,
-      (order.total ?? 0) - subtotal
-    );
-
-    doc.setDrawColor(...GOLD);
-    doc.setLineWidth(0.4);
-    doc.line(12, y, 198, y);
-
-    y += 10;
-
-    // Summary Box
-    doc.setFillColor(...LIGHT);
-    doc.roundedRect(110, y, 88, 40, 3, 3, "F");
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(11);
-    doc.setTextColor(...BLACK);
-    doc.text("Subtotal", 116, y + 10);
-    doc.text(money(subtotal), 192, y + 10, {
-      align: "right",
-    });
-
-    doc.text("Shipping", 116, y + 20);
-    doc.text(money(shipping), 192, y + 20, {
-      align: "right",
-    });
-
-    doc.setDrawColor(200, 200, 200);
-    doc.line(116, y + 24, 192, y + 24);
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(13);
-
-    doc.text("Grand Total", 116, y + 34);
-
-    doc.setTextColor(...GREEN);
-
-    doc.text(
-      money(order.total ?? 0),
-      192,
-      y + 34,
-      {
+      text(money(lineTotal), RIGHT - 4, y + 9, {
+        size: 8,
+        bold: true,
         align: "right",
-      }
+      });
+
+      y += rowHeight;
+    });
+
+    const totalQuantity = items.reduce(
+      (sum, item) => sum + Number(item.quantity || 0),
+      0
     );
 
-    doc.setTextColor(...BLACK);
+    drawBox(LEFT, y, WIDTH, 15, true);
 
-    y += 55;
+    text("Total", LEFT + 4, y + 9, {
+      size: 8,
+      bold: true,
+    });
 
-    // ==========================
-    // THANK YOU SECTION
-    // ==========================
-
-    doc.setDrawColor(...GOLD);
-    doc.setLineWidth(0.5);
-    doc.line(12, y, 198, y);
-
-    y += 12;
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.setTextColor(...BLACK);
-
-    doc.text(
-      "Thank You For Shopping With Us!",
-      105,
-      y,
+    text(
+      String(totalQuantity),
+      LEFT + productWidth + quantityWidth / 2,
+      y + 9,
       {
+        size: 8,
+        bold: true,
         align: "center",
       }
     );
 
-    y += 8;
+    text(money(subtotal), RIGHT - 4, y + 9, {
+      size: 8,
+      bold: true,
+      align: "right",
+    });
 
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(...GRAY);
+    // =====================================================
+    // GRAND TOTAL
+    // =====================================================
 
-    doc.text(
-      "Every Kashmir Royale Shawl is handcrafted with care and authenticity.",
-      105,
-      y,
+    y += 25;
+
+    text("Subtotal", 145, y, {
+      size: 8,
+    });
+
+    text(money(subtotal), RIGHT - 4, y, {
+      size: 8,
+      align: "right",
+    });
+
+    text("Shipping", 145, y + 8, {
+      size: 8,
+    });
+
+    text(money(shipping), RIGHT - 4, y + 8, {
+      size: 8,
+      align: "right",
+    });
+
+    doc.setDrawColor(...BORDER);
+    doc.line(140, y + 13, RIGHT, y + 13);
+
+    text("Grand Total", 145, y + 23, {
+      size: 11,
+      bold: true,
+    });
+
+    text(money(grandTotal), RIGHT - 4, y + 23, {
+      size: 11,
+      bold: true,
+      align: "right",
+    });
+
+    // =====================================================
+    // SIGNATURE
+    // =====================================================
+
+    y += 39;
+
+    text("Signature", LEFT + 4, y, {
+      size: 9,
+      bold: true,
+    });
+
+    text(
+      "This is a computer generated invoice. No signature required.",
+      LEFT + 4,
+      y + 7,
       {
-        align: "center",
+        size: 8,
+        color: GRAY,
       }
     );
 
-    y += 7;
+    // =====================================================
+    // RETURNS POLICY
+    // =====================================================
 
-    doc.text(
-      "Premium Kashmiri Craftsmanship Since 1995",
-      105,
-      y,
-      {
-        align: "center",
-      }
-    );
+    y += 20;
 
-    y += 15;
+    text("Returns Policy", LEFT + 4, y, {
+      size: 9,
+      bold: true,
+    });
 
-    // ==========================
+    const policy =
+      "Please keep this invoice for your records. For returns or exchanges, " +
+      "the original invoice and product packaging may be required. " +
+      "Terms and conditions apply.";
+
+    wrappedText(policy, LEFT + 4, y + 7, WIDTH - 8, 4);
+
+    // =====================================================
     // FOOTER
-    // ==========================
+    // =====================================================
 
-    doc.setDrawColor(...GOLD);
-    doc.line(12, y, 198, y);
+    y += 24;
 
-    y += 8;
+    doc.setDrawColor(...BORDER);
+    doc.line(LEFT, y, RIGHT, y);
 
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.setTextColor(...BLACK);
+    text("KASHMIR ROYALE SHAWLS", 105, y + 8, {
+      size: 9,
+      bold: true,
+      align: "center",
+    });
 
-    doc.text(
-      "KASHMIR ROYALE SHAWLS",
-      105,
-      y,
-      {
-        align: "center",
-      }
-    );
-
-    y += 6;
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(...GRAY);
-
-    doc.text(
+    text(
       "Srinagar, Jammu & Kashmir, India",
       105,
-      y,
+      y + 14,
       {
+        size: 7,
+        color: GRAY,
         align: "center",
       }
     );
 
-    y += 5;
+    text("E. & O.E.", RIGHT - 3, y + 21, {
+      size: 7,
+      bold: true,
+      align: "right",
+    });
 
-    doc.text(
-      "www.shopkashmirshawls.com",
-      105,
-      y,
-      {
-        align: "center",
-      }
-    );
-
-    y += 5;
-
-    doc.text(
-      "support@shopkashmirshawls.com",
-      105,
-      y,
-      {
-        align: "center",
-      }
-    );
-    // ==========================
-    // SAVE PDF
-    // ==========================
-
-    doc.save(`Invoice-${order.orderId ?? "invoice"}.pdf`);
+    // Save
+    doc.save(`Invoice-${orderNumber}.pdf`);
   };
 
   return (
@@ -463,4 +637,3 @@ const subtotal = (order.cart ?? []).reduce(
     </button>
   );
 }
-

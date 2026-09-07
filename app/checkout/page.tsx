@@ -143,295 +143,381 @@ const [qrPaymentStatus, setQrPaymentStatus] =
       };
     });
 
-  const generateInvoice = async (
+ const generateInvoice = async (
   orderId: string,
   paymentMethod: string,
   paymentStatus: string
 ) => {
-    const doc = new jsPDF();
+  const doc = new jsPDF({
+    orientation: "portrait",
+    unit: "mm",
+    format: "a4",
+  });
 
-    const logo =
-      await getBase64Image();
+  const BLACK: [number, number, number] = [25, 25, 25];
+  const GRAY: [number, number, number] = [90, 90, 90];
+  const BORDER: [number, number, number] = [100, 100, 100];
+  const LIGHT: [number, number, number] = [247, 247, 247];
+  const WHITE: [number, number, number] = [255, 255, 255];
 
-    doc.setFillColor(
-      212,
-      175,
-      55
-    );
+  const today = new Date().toLocaleDateString("en-IN");
 
-    doc.rect(
-      0,
-      0,
-      210,
-      35,
-      "F"
-    );
+  const money = (value: number) =>
+    `Rs. ${Number(value || 0).toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
 
-    doc.addImage(
-      logo,
-      "PNG",
-      12,
-      5,
-      22,
-      22
-    );
-
-    doc.setTextColor(
-      255,
-      255,
-      255
-    );
-
-    doc.setFont(
-      "helvetica",
-      "bold"
-    );
-
-    doc.setFontSize(22);
-
-    doc.text(
-      "Kashmir Royale",
-      42,
-      16
-    );
-
-    doc.setFont(
-      "helvetica",
-      "normal"
-    );
-
-    doc.setFontSize(11);
-
-    doc.text(
-      "Luxury Kashmiri Shawls",
-      42,
-      24
-    );
-
-    doc.setFontSize(9);
-
-    doc.text(
-      "Srinagar, Jammu & Kashmir",
-      138,
-      12
-    );
-
-    doc.text(
-      "support@kashmirroyale.com",
-      138,
-      18
-    );
-
-    doc.text(
-      "+91 72981 29017",
-      138,
-      24
-    );
-
-    doc.text(
-      "+91 7006819881",
-      138,
-      30
-    );
-
-    doc.setTextColor(
-      0,
-      0,
-      0
-    );
-
-    doc.setFont(
-      "helvetica",
-      "bold"
-    );
-
-    doc.setFontSize(18);
-
-    doc.text(
-      "INVOICE",
-      150,
-      48
-    );
-
-    doc.setFont(
-      "helvetica",
-      "normal"
-    );
-
-    doc.setFontSize(11);
-
-   doc.text(
-  `Order ID: ${orderId}`,
-  15,
-  48
-);
-
-doc.text(
-  `Invoice No: INV-${Date.now()}`,
-  15,
-  55
-);
-
-    doc.text(
-      `Date: ${new Date().toLocaleDateString()}`,
-      15,
-      62
-    );
-    doc.setFont(
-  "helvetica",
-  "bold"
-);
-
-doc.text(
-  `Payment Method: ${paymentMethod}`,
-  15,
-  69
-);
-
-doc.text(
-  `Payment Status: ${paymentStatus}`,
-  15,
-  76
-);
-
-    doc.setFont(
-      "helvetica",
-      "bold"
-    );
-
-    doc.setFontSize(14);
-
-    doc.text(
-      "Customer Details",
-      15,
-      88
-    );
-
-    doc.setFont(
-      "helvetica",
-      "normal"
-    );
-
-    doc.setFontSize(11);
-
-    doc.text(
-      `Name: ${name}`,
-      15,
-      80
-    );
-
-    doc.text(
-      `Email: ${email}`,
-      15,
-      87
-    );
-
-    doc.text(
-      `Phone: ${phone}`,
-      15,
-      94
-    );
-
-    doc.text(
-      `Address: ${address}`,
-      15,
-      101
-    );
-
-    doc.text(
-      `City: ${city}`,
-      15,
-      108
-    );
-
-    doc.text(
-      `State: ${state}`,
-      15,
-      115
-    );
-
-    doc.text(
-      `Pincode: ${pincode}`,
-      15,
-      122
-    );
-
-    autoTable(doc, {
-      startY: 135,
-
-      head: [
-        [
-          "Product",
-          "Qty",
-          "Price",
-          "Total",
-        ],
-      ],
-
-      body: cartItems.map(
-        (item) => [
-          item.title,
-          item.quantity,
-          `₹${item.price}`,
-          `₹${
-            item.price *
-            item.quantity
-          }`,
-        ]
-      ),
-
-      theme: "grid",
-
-      headStyles: {
-        fillColor: [
-          212,
-          175,
-          55,
-        ],
-      },
-    });
-
-    const pdfWithTable =
-      doc as jsPDF & {
-        lastAutoTable?: {
-          finalY: number;
-        };
-      };
-
-    const finalY =
-      pdfWithTable.lastAutoTable
-        ?.finalY ?? 150;
-
-    doc.setFont(
-      "helvetica",
-      "bold"
-    );
-
-    doc.setFontSize(15);
-
-    doc.text(
-      `Grand Total: ₹${grandTotal}`,
-      15,
-      finalY + 15
-    );
-
-    doc.setFont(
-      "helvetica",
-      "normal"
-    );
-
-    doc.setFontSize(11);
-
-    doc.text(
-      "Thank you for shopping with Kashmir Royale ❤️",
-      15,
-      finalY + 30
-    );
-
-    doc.save(
-      `Invoice-${Date.now()}.pdf`
-    );
+  const drawText = (
+    value: string,
+    x: number,
+    y: number,
+    size = 8,
+    bold = false,
+    align: "left" | "center" | "right" = "left",
+    color: [number, number, number] = BLACK
+  ) => {
+    doc.setFont("helvetica", bold ? "bold" : "normal");
+    doc.setFontSize(size);
+    doc.setTextColor(...color);
+    doc.text(value, x, y, { align });
   };
+
+  const drawBox = (
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    filled = false
+  ) => {
+    doc.setLineWidth(0.3);
+    doc.setDrawColor(...BORDER);
+
+    if (filled) {
+      doc.setFillColor(...LIGHT);
+      doc.rect(x, y, width, height, "FD");
+    } else {
+      doc.rect(x, y, width, height, "S");
+    }
+  };
+
+  // White page
+  doc.setFillColor(...WHITE);
+  doc.rect(0, 0, 210, 297, "F");
+
+  // Outer border
+  doc.setDrawColor(...BORDER);
+  doc.setLineWidth(0.4);
+  doc.rect(8, 8, 194, 281);
+
+  // =====================================================
+  // HEADER — NO GOLD BACKGROUND
+  // =====================================================
+
+  drawText("KASHMIR ROYALE SHAWLS", 12, 19, 16, true);
+  drawText(
+    "Premium Kashmiri Handcrafted Shawls",
+    12,
+    26,
+    8,
+    false,
+    "left",
+    GRAY
+  );
+
+  drawText("INVOICE", 198, 19, 15, true, "right");
+
+  doc.setDrawColor(...BORDER);
+  doc.line(12, 34, 198, 34);
+
+  // =====================================================
+  // SHIP TO / BILL TO
+  // =====================================================
+
+  let y = 40;
+
+  const boxWidth = 93;
+  const boxHeight = 48;
+
+  drawBox(12, y, boxWidth, boxHeight);
+  drawBox(105, y, boxWidth, boxHeight);
+
+  drawText("Ship To", 16, y + 8, 10, true);
+  drawText("Bill To", 109, y + 8, 10, true);
+
+  drawText(name || "Customer", 16, y + 16, 8, true);
+  drawText(name || "Customer", 109, y + 16, 8, true);
+
+  const fullAddress = [
+    address,
+    city,
+    state,
+    pincode,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  const shipAddressLines = doc.splitTextToSize(
+    fullAddress || "-",
+    82
+  );
+
+  const billAddressLines = doc.splitTextToSize(
+    fullAddress || "-",
+    82
+  );
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(...BLACK);
+
+  doc.text(shipAddressLines, 16, y + 23);
+  doc.text(billAddressLines, 109, y + 23);
+
+  drawText(`Phone: ${phone || "-"}`, 16, y + 41, 8, false, "left", GRAY);
+  drawText(`Phone: ${phone || "-"}`, 109, y + 41, 8, false, "left", GRAY);
+
+  // =====================================================
+  // ORDER DETAILS
+  // =====================================================
+
+  y += boxHeight;
+
+  drawBox(12, y, 186, 34);
+
+  drawText("Order ID", 16, y + 8, 8, true);
+  drawText("Order Date", 72, y + 8, 8, true);
+  drawText("Invoice Date", 124, y + 8, 8, true);
+
+  drawText("Invoice Number", 16, y + 23, 8, true);
+  drawText("Payment Method", 72, y + 23, 8, true);
+  drawText("Payment Status", 145, y + 23, 8, true);
+
+  drawText(orderId, 16, y + 14, 8);
+  drawText(today, 72, y + 14, 8);
+  drawText(today, 124, y + 14, 8);
+
+  drawText(`INV-${orderId}`, 16, y + 29, 8);
+  drawText(
+    paymentMethod === "razorpay"
+      ? "Online Payment"
+      : "Cash on Delivery",
+    72,
+    y + 29,
+    8
+  );
+
+  drawText(
+    paymentStatus,
+    145,
+    y + 29,
+    8,
+    true,
+    "left",
+    paymentStatus.toLowerCase() === "paid"
+      ? [35, 125, 55]
+      : [170, 95, 20]
+  );
+
+  // =====================================================
+  // SELLER DETAILS
+  // =====================================================
+
+  y += 34;
+
+  drawBox(12, y, 186, 32);
+
+  drawText("Sold By:", 16, y + 8, 8, true);
+  drawText("Kashmir Royale Shawls", 16, y + 15, 8);
+
+  drawText("Ship-from Address:", 16, y + 23, 8, true);
+  drawText(
+    "Srinagar, Jammu & Kashmir, India",
+    16,
+    y + 29,
+    8
+  );
+
+  drawText("Total Items:", 145, y + 8, 8, true);
+  drawText(String(cartItems.length), 178, y + 8, 8);
+
+  // =====================================================
+  // PRODUCT TABLE — FLIPKART STYLE
+  // =====================================================
+
+  y += 40;
+
+  autoTable(doc, {
+    startY: y,
+
+    margin: {
+      left: 12,
+      right: 12,
+    },
+
+    head: [
+      [
+        "Product Title",
+        "Qty",
+        "Price",
+        "Total",
+      ],
+    ],
+
+    body: cartItems.map((item) => [
+      item.title,
+      String(item.quantity),
+      money(item.price),
+      money(item.price * item.quantity),
+    ]),
+
+    theme: "grid",
+
+    styles: {
+      font: "helvetica",
+      fontSize: 8,
+      textColor: BLACK,
+      lineColor: BORDER,
+      lineWidth: 0.25,
+      cellPadding: 4,
+      valign: "middle",
+    },
+
+    headStyles: {
+      fillColor: LIGHT,
+      textColor: BLACK,
+      fontStyle: "bold",
+      lineColor: BORDER,
+      lineWidth: 0.3,
+    },
+
+    alternateRowStyles: {
+      fillColor: WHITE,
+    },
+
+    columnStyles: {
+      0: {
+        cellWidth: 104,
+        halign: "left",
+      },
+      1: {
+        cellWidth: 18,
+        halign: "center",
+      },
+      2: {
+        cellWidth: 30,
+        halign: "right",
+      },
+      3: {
+        cellWidth: 34,
+        halign: "right",
+      },
+    },
+  });
+
+  const pdfWithTable = doc as jsPDF & {
+    lastAutoTable?: {
+      finalY: number;
+    };
+  };
+
+  const finalY = pdfWithTable.lastAutoTable?.finalY || y + 30;
+
+  // =====================================================
+  // TOTAL SUMMARY
+  // =====================================================
+
+  let summaryY = finalY + 18;
+
+  drawText("Subtotal", 145, summaryY, 8);
+  drawText(money(total), 195, summaryY, 8, false, "right");
+
+  drawText("Shipping", 145, summaryY + 8, 8);
+  drawText(
+    money(shippingCharge),
+    195,
+    summaryY + 8,
+    8,
+    false,
+    "right"
+  );
+
+  doc.setDrawColor(...BORDER);
+  doc.line(140, summaryY + 13, 198, summaryY + 13);
+
+  drawText("Grand Total", 145, summaryY + 23, 11, true);
+  drawText(
+    money(grandTotal),
+    195,
+    summaryY + 23,
+    11,
+    true,
+    "right"
+  );
+
+  // =====================================================
+  // SIGNATURE / RETURN POLICY
+  // =====================================================
+
+  summaryY += 42;
+
+  drawText("Signature", 16, summaryY, 9, true);
+
+  drawText(
+    "This is a computer generated invoice. No signature required.",
+    16,
+    summaryY + 7,
+    8,
+    false,
+    "left",
+    GRAY
+  );
+
+  drawText("Returns Policy", 16, summaryY + 22, 9, true);
+
+  const returnPolicy =
+    "Please keep this invoice for your records. For returns or exchanges, " +
+    "the original invoice and product packaging may be required. " +
+    "Terms and conditions apply.";
+
+  const returnLines = doc.splitTextToSize(
+    returnPolicy,
+    178
+  );
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(...GRAY);
+  doc.text(returnLines, 16, summaryY + 29);
+
+  // =====================================================
+  // FOOTER
+  // =====================================================
+
+  doc.setDrawColor(...BORDER);
+  doc.line(12, 274, 198, 274);
+
+  drawText(
+    "KASHMIR ROYALE SHAWLS",
+    105,
+    282,
+    9,
+    true,
+    "center"
+  );
+
+  drawText(
+    "Srinagar, Jammu & Kashmir, India",
+    105,
+    287,
+    7,
+    false,
+    "center",
+    GRAY
+  );
+
+  doc.save(`Invoice-${orderId}.pdf`);
+};
 
   useEffect(() => {
     if (!qrOrderId || !phone || qrPaymentStatus === "Paid") {
