@@ -48,8 +48,15 @@ interface Order {
   orderStatus: OrderStatus;
   total: number;
   createdAt: string;
+  updatedAt?: string;
+
+  shiprocketOrderId?: string | number;
+  shiprocketShipmentId?: string | number;
+  shiprocketResponse?: unknown;
+
   customer: Customer;
 }
+
 
 interface DashboardStats {
   totalOrders: number;
@@ -278,51 +285,142 @@ useEffect(() => {
     methodFilter,
   ]);
 
-  const updateStatus = async (
-    id: string,
-    status: OrderStatus
-  ) => {
-    try {
-      setUpdatingId(id);
+ const updateStatus = async (
+  id: string,
+  status: OrderStatus
+) => {
+  try {
+    setUpdatingId(id);
 
-      const res = await fetch(`/api/update-order-status/${id}`, {
-        method: "PUT",
+    const res = await fetch(
+      `/api/update-order-status/${encodeURIComponent(id)}`,
+      {
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
+        cache: "no-store",
         body: JSON.stringify({
           orderStatus: status,
         }),
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to update");
       }
+    );
 
-      setOrders((prev) =>
-        prev.map((order) =>
-          order._id === id
-            ? {
-                ...order,
-                orderStatus: status,
-              }
-            : order
-        )
-      );
+    let result: any = {};
 
-      if (selectedOrder?._id === id) {
-        setSelectedOrder({
-          ...selectedOrder,
-          orderStatus: status,
-        });
-      }
-    } catch (error) {
-      console.error(error);
-      alert("Unable to update order.");
-    } finally {
-      setUpdatingId("");
+    try {
+      result = await res.json();
+    } catch {
+      result = {};
     }
-  };
+
+    console.log("UPDATE ORDER RESPONSE:", {
+      httpStatus: res.status,
+      result,
+    });
+
+    if (!res.ok || result.success !== true) {
+      throw new Error(
+        result.message ||
+          result.error ||
+          `Order update failed. HTTP ${res.status}`
+      );
+    }
+
+    const updatedOrder = result.order;
+
+    setOrders((prev) =>
+      prev.map((order) =>
+        order._id === id
+          ? {
+              ...order,
+              orderStatus:
+                result.orderStatus ||
+                updatedOrder?.orderStatus ||
+                status,
+              shiprocketOrderId:
+                result.shiprocketOrderId ??
+                updatedOrder?.shiprocketOrderId ??
+                order.shiprocketOrderId,
+              shiprocketShipmentId:
+                result.shiprocketShipmentId ??
+                updatedOrder?.shiprocketShipmentId ??
+                order.shiprocketShipmentId,
+              shiprocketResponse:
+                result.shiprocketResponse ??
+                updatedOrder?.shiprocketResponse ??
+                order.shiprocketResponse,
+              updatedAt:
+                result.updatedAt ??
+                updatedOrder?.updatedAt ??
+                order.updatedAt,
+            }
+          : order
+      )
+    );
+
+    if (selectedOrder?._id === id) {
+      setSelectedOrder((previous) =>
+        previous
+          ? {
+              ...previous,
+              orderStatus:
+                result.orderStatus ||
+                updatedOrder?.orderStatus ||
+                status,
+              shiprocketOrderId:
+                result.shiprocketOrderId ??
+                updatedOrder?.shiprocketOrderId ??
+                previous.shiprocketOrderId,
+              shiprocketShipmentId:
+                result.shiprocketShipmentId ??
+                updatedOrder?.shiprocketShipmentId ??
+                previous.shiprocketShipmentId,
+              shiprocketResponse:
+                result.shiprocketResponse ??
+                updatedOrder?.shiprocketResponse ??
+                previous.shiprocketResponse,
+              updatedAt:
+                result.updatedAt ??
+                updatedOrder?.updatedAt ??
+                previous.updatedAt,
+            }
+          : previous
+      );
+    }
+
+    if (status === "Shipped") {
+      const shiprocketOrderId =
+        result.shiprocketOrderId ??
+        updatedOrder?.shiprocketOrderId;
+
+      const shiprocketShipmentId =
+        result.shiprocketShipmentId ??
+        updatedOrder?.shiprocketShipmentId;
+
+      alert(
+        `Order Shiprocket par successfully bhej diya gaya.\n\n` +
+          `Shiprocket Order ID: ${
+            shiprocketOrderId || "Not available"
+          }\n` +
+          `Shipment ID: ${
+            shiprocketShipmentId || "Not available"
+          }`
+      );
+    } else {
+      alert(`Order status ${status} ho gaya.`);
+    }
+  } catch (error: any) {
+    console.error("UPDATE STATUS ERROR:", error);
+
+    alert(
+      error?.message ||
+        "Order update nahi ho saka. Terminal mein error check karein."
+    );
+  } finally {
+    setUpdatingId("");
+  }
+};
 
   const exportExcel = () => {
     const headers = [

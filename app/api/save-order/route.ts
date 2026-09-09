@@ -47,8 +47,13 @@ const orderId =
 
 const result = await db.collection("orders").insertOne({
   ...order,
+  items: order.cart,
+
+  // Shiprocket ke liye required field
+  
 
   orderId,
+  
 
   paymentMethod:
     order.paymentMethod || "Razorpay",
@@ -133,7 +138,7 @@ const result = await db.collection("orders").insertOne({
             phone: order.customer.phone,
             total: order.total,
             paymentId: order.paymentId,
-            orderId: order.orderId,
+            orderId: orderId,
           })
         );
 
